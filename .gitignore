@@ -1,0 +1,49 @@
+# === Visual Studio ===
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE settings
+.idea/
+.vscode/
+
+# Rider
+*.DotSettings.user
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.ncrunchproject
+
+# === Build outputs ===
+[Bb]in/
+[Oo]bj/
+publish/
+
+# === .NET Core ===
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# === NuGet ===
+*.nupkg
+packages/
+!packages/build/
+
+# === User secrets ===
+secrets.json
+
+# === OS generated ===
+Thumbs.db
+.DS_Store
+*~
+
+# === Logs ===
+*.log
+
+# === Test results ===
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# === Others ===
+node_modules/
