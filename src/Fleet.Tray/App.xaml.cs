@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using Application = System.Windows.Application;
@@ -18,15 +19,16 @@ namespace Fleet.Tray
 
         private async void App_Startup(object sender, StartupEventArgs e)
         {
+         
             // 1) Spin up the web server
             _webHost = BlazorHostBuilder
-                            .CreateHostBuilder(Array.Empty<string>())
+                            .CreateHostBuilder(e.Args)
                             .ConfigureServices(services =>
                             {
                                 // notification service, etc.
 
                                 // register a named HttpClient pre-configured for your own server
-                                services.AddHttpClient("SleeprApi", client =>
+                                services.AddHttpClient("FleetApi", client =>
                                 {
                                     client.BaseAddress = new Uri("https://localhost:5001/");
                                     client.DefaultRequestVersion = new Version(2, 0); // optional
@@ -46,7 +48,7 @@ namespace Fleet.Tray
                     Items =
                     {
                         new ToolStripMenuItem("Open Web UI", null, (_,__) =>
-                            Process.Start(new ProcessStartInfo("https://localhost:5001/api/status")
+                            Process.Start(new ProcessStartInfo("https://localhost:5001/")
                             { UseShellExecute = true })),
                                     // new item to show your MainWindow
                         new ToolStripMenuItem("Show Dashboard", null, (_,__) =>

@@ -32,6 +32,7 @@ packages/
 
 # === User secrets ===
 secrets.json
+.env
 
 # === OS generated ===
 Thumbs.db
@@ -40,6 +41,7 @@ Thumbs.db
 
 # === Logs ===
 *.log
+[Ll]og/log-*
 
 # === Test results ===
 [Tt]est[Rr]esult*/

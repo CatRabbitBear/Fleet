@@ -37,7 +37,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshStatus()
     {
-        var client = _httpClientFactory.CreateClient("SleeprApi");
+        // var client = _httpClientFactory.CreateClient("FleetApi");
         // var status = await client.GetFromJsonAsync<Class1>("api/health/detail");
         var status = new { message = "Hello from Fleet!" };
         StatusTextBlock.Text = $"Message: {status?.message}";

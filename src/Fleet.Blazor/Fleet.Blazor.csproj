@@ -1,4 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="DotNetEnv" Version="3.1.1" />
+    <PackageReference Include="MailKit" Version="4.12.1" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.57.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Agents.Core" Version="1.57.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.57.0-beta" />
+    <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.1" />
+    <PackageReference Include="Quickenshtein" Version="1.5.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fleet.Shared\Fleet.Shared.csproj" />
@@ -8,6 +21,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	<UseRazorComponentServer>true</UseRazorComponentServer>
+	<UserSecretsId>f0ed82e3-114b-4def-8975-269cd5b29544</UserSecretsId>
   </PropertyGroup>
-
+	
 </Project>
