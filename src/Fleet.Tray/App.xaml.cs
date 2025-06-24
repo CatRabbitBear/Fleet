@@ -1,4 +1,4 @@
-﻿using Fleet.Web;
+﻿using Fleet.Blazor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -19,8 +19,8 @@ namespace Fleet.Tray
         private async void App_Startup(object sender, StartupEventArgs e)
         {
             // 1) Spin up the web server
-            _webHost = WebHostBuilder
-                            .MyCreateHostBuilder(Array.Empty<string>())
+            _webHost = BlazorHostBuilder
+                            .CreateHostBuilder(Array.Empty<string>())
                             .ConfigureServices(services =>
                             {
                                 // notification service, etc.

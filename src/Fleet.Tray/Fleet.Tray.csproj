@@ -16,7 +16,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Fleet.Web\Fleet.Web.csproj" />
+		<ProjectReference Include="..\Fleet.Blazor\Fleet.Blazor.csproj" />
 		<ProjectReference Include="..\Fleet.Shared\Fleet.Shared.csproj" />
 	</ItemGroup>
 

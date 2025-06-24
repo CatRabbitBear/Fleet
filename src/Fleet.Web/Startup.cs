@@ -13,7 +13,7 @@ namespace Fleet.Web
             // migrate all your builder.Services.AddXyz(...) calls here
             services.AddCors();
             services.AddControllers();
-            
+
             // ... razor pages, DI registrations, etc.
         }
 
@@ -25,6 +25,7 @@ namespace Fleet.Web
                 app.UseHsts();
             }
 
+            app.UseStaticFiles();
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors();
