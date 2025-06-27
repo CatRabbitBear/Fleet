@@ -1,5 +1,7 @@
 ﻿@page "/counter"
+@using Fleet.Shared.Interfaces
 @rendermode InteractiveServer
+@inject INotificationService NotificationService
 
 <PageTitle>Counter</PageTitle>
 
@@ -8,6 +10,7 @@
 <p role="status">Current count: @currentCount</p>
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button @onclick="RequestPermission">Ask Permission</button>
 
 @code {
     private int currentCount = 0;
@@ -15,5 +18,11 @@
     private void IncrementCount()
     {
         currentCount++;
+    }
+
+    private async Task RequestPermission()
+    {
+        bool allowed = await NotificationService.RequestPermission("Access sensitive tool?");
+        Console.WriteLine($"Permission granted? {allowed}");
     }
 }
