@@ -7,13 +7,16 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using System.Windows.Forms;
+using System.Runtime.Versioning;
+// using System.Windows.Forms;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxOptions = System.Windows.MessageBoxOptions;
 
 namespace Fleet.Tray
 {
+    [SupportedOSPlatform("windows")]
     public partial class App : Application
     {
         private NotifyIcon? _trayIcon;
@@ -24,6 +27,25 @@ namespace Fleet.Tray
 
         private async void App_Startup(object sender, StartupEventArgs e)
         {
+            // Give app ID - will automatically be set when start using toasts broken currently - thanks 4o
+            //ToastNotificationManagerCompat.AppUserModelId = "com.fleet.agent";
+            ToastNotificationManagerCompat.OnActivated += toastArgs =>
+            {
+                var args = ToastArguments.Parse(toastArgs.Argument);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (args["action"] == "allow")
+                    {
+                        _notificationService?.ResolvePermission(true);
+                    }
+                    else if (args["action"] == "deny")
+                    {
+                        _notificationService?.ResolvePermission(false);
+                    }
+                });
+            };
+
             // From .Shared, inject into .Blazor.
             _notificationService = new NotificationService();
 
@@ -76,6 +98,14 @@ namespace Fleet.Tray
                 }
             };
 
+            // Requires Microsoft.Toolkit.Uwp.Notifications NuGet package version 7.0 or greater
+            //new ToastContentBuilder()
+            //    .AddArgument("action", "viewConversation")
+            //    .AddArgument("conversationId", 9813)
+            //    .AddText("Andrew sent you a picture")
+            //    .AddText("Check this out, The Enchantments in Washington!")
+            //    .Show();
+
             // Create (but don’t show) the dashboard window
             _mainWindow = new MainWindow();
             _mainWindow.Hide();  // ensure it starts hidden
@@ -93,12 +123,12 @@ namespace Fleet.Tray
 
         private async void HandlePermissionRequest(PermissionRequest request)
         {
-            if (_trayIcon == null) return;
-
-            ShowBalloonTip(request.Description);
-
-            // Attach click event for BalloonTip
-            _trayIcon.BalloonTipClicked += OnBalloonTipClicked;
+            new ToastContentBuilder()
+                .AddText("Fleet - Permission Request")
+                .AddText(request.Description)
+                .AddButton(new ToastButton("Allow", "action=allow").SetBackgroundActivation())
+                .AddButton(new ToastButton("Deny", "action=deny").SetBackgroundActivation())
+                .Show();
 
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             bool granted;
@@ -112,32 +142,12 @@ namespace Fleet.Tray
                 granted = false;  // Default to deny after timeout
             }
 
-            // Cleanup
-            _trayIcon.BalloonTipClicked -= OnBalloonTipClicked;
-
             Console.WriteLine($"Permission '{request.Description}' granted: {granted}");
-
-            // Local handler for clarity
-            void OnBalloonTipClicked(object? sender, EventArgs e)
-            {
-                // Show a MessageBox on top of all windows
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    var result = MessageBox.Show(
-                        request.Description,
-                        "Permission Needed",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question,
-                        MessageBoxResult.No,
-                        MessageBoxOptions.DefaultDesktopOnly);
-
-                    request.UserDecision.TrySetResult(result == MessageBoxResult.Yes);
-                });
-            }
         }
 
         private async void ShutdownApp()
         {
+            ToastNotificationManagerCompat.Uninstall();
             _trayIcon?.Dispose();
             if (_webHost is not null)
                 await _webHost.StopAsync();

@@ -10,4 +10,6 @@ public interface INotificationService
     event Action<PermissionRequest> OnPermissionRequested;
 
     Task<bool> RequestPermission(string description);
+
+    void ResolvePermission(bool granted);
 }
