@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.SemanticKernel;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using YamlDotNet.Core.Tokens;
 
 namespace Fleet.Blazor;
 
@@ -39,6 +41,19 @@ public class Startup
         });
         // services.AddControllers();
         // Add services to the container.
+#pragma warning disable SKEXP0070
+        services.AddAzureAIInferenceChatCompletion(
+            endpoint: new Uri(Environment.GetEnvironmentVariable("AZURE_ENDPOINT")!),
+            modelId: Environment.GetEnvironmentVariable("AZURE_MODEL_ID")!,
+            apiKey: _configuration["AZURE_MISTRAL_NEMO_KEY"] ?? throw new InvalidOperationException("AZURE_MISTRAL_NEMO_KEY is missing")
+        );
+
+        services.AddTransient((serviceProvider) =>
+        {
+            return new Kernel(serviceProvider);
+        });
+
+
         services.AddRazorComponents()
             .AddInteractiveServerComponents();
         services.AddControllers()
