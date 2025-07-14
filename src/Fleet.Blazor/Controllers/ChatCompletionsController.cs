@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Fleet.Blazor.Agents;
+using Fleet.Blazor.Pipeline.Dtos;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fleet.Blazor.Controllers;
@@ -7,11 +9,11 @@ namespace Fleet.Blazor.Controllers;
 public class ChatCompletionsController : ControllerBase
 {
     private readonly ILogger<ChatCompletionsController> _logger;
-    //private readonly IChatCompletionsRunner _chatCompletionsRunner;
-    public ChatCompletionsController(ILogger<ChatCompletionsController> logger)
+    private readonly ChatCompletionsRunner _chatCompletionsRunner;
+    public ChatCompletionsController(ILogger<ChatCompletionsController> logger, ChatCompletionsRunner chatCompletionsRunner)
     {
         _logger = logger;
-        //_chatCompletionsRunner = chatCompletionsRunner;
+        _chatCompletionsRunner = chatCompletionsRunner;
     }
 
     [HttpPost("run-task")]
@@ -19,12 +21,12 @@ public class ChatCompletionsController : ControllerBase
     {
         try
         {
-            //var result = await _chatCompletionsRunner.RunTaskAsync(req.History);
-            var result = new AgentResponse
-            {
-                Result = "This is a mock response for the task.",
-                FilePath = null // or set to a valid file path if needed
-            };
+            var result = await _chatCompletionsRunner.RunTaskAsync(req.History);
+            //var result = new AgentResponse
+            //{
+            //    Result = "This is a mock response for the task.",
+            //    FilePath = null // or set to a valid file path if needed
+            //};
             _logger.LogInformation("Task completed successfully by chat completions runner. Items returned : {Count}", req.History.Count);
             return Ok(result);
         }

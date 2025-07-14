@@ -1,4 +1,4 @@
-﻿namespace Fleet.Blazor.Controllers;
+﻿namespace Fleet.Blazor.Pipeline.Dtos;
 
 public enum MessageType
 {

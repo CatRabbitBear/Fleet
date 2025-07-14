@@ -1,5 +1,8 @@
 ﻿using DotNetEnv;
+using Fleet.Blazor.Agents;
 using Fleet.Blazor.Components;
+using Fleet.Blazor.Pipeline;
+using Fleet.Blazor.Pipeline.Interfaces;
 using Fleet.Blazor.PluginSystem;
 using Fleet.Blazor.PluginSystem.Interfaces;
 using Fleet.Blazor.SQLite;
@@ -91,6 +94,8 @@ public class Startup
         {
             return new Kernel(serviceProvider);
         });
+        services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
+        services.AddScoped<ChatCompletionsRunner>();
 
 
         services.AddRazorComponents()
