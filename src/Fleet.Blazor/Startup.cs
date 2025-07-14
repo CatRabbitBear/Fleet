@@ -1,5 +1,8 @@
 ﻿using DotNetEnv;
 using Fleet.Blazor.Components;
+using Fleet.Blazor.PluginSystem;
+using Fleet.Blazor.PluginSystem.Interfaces;
+using Fleet.Blazor.SQLite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +42,42 @@ public class Startup
                   .AllowAnyMethod();
             });
         });
+
+        // DB
+        // Make sure %LocalAppData%/Sleepr exists
+        // This is where the SQLite database will be stored
+        var appDataPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Sleepr");
+        Directory.CreateDirectory(appDataPath);
+
+        // Configure SQLite handlers
+        services.AddScoped<SqliteMcpHandler>((sp) =>
+        {
+            var dbFilePath = Path.Combine(appDataPath,
+                _configuration["PluginsDb:Path"] ?? "plugins.db");
+            var connectionString = $"Data Source={dbFilePath}";
+            return new SqliteMcpHandler(connectionString);
+        });
+
+        services.AddScoped<SqliteAgentOutputHandler>((sp) =>
+        {
+            var dbFilePath = Path.Combine(appDataPath,
+                _configuration["OutputDb:Path"] ?? "agents-output.db");
+            var connectionString = $"Data Source={dbFilePath}";
+            return new SqliteAgentOutputHandler(connectionString);
+        });
+
+        // DB + MCP
+        services.AddScoped<IMcpRepoManager, McpJsonRepoManager>();
+        services.AddScoped<IPluginManager>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<McpPluginManager>>();
+            var repo = sp.GetRequiredService<IMcpRepoManager>();
+            return new McpPluginManager(repo, logger);
+        });
+
+
         // services.AddControllers();
         // Add services to the container.
 #pragma warning disable SKEXP0070
