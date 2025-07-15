@@ -51,7 +51,7 @@ public class Startup
         // This is where the SQLite database will be stored
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Sleepr");
+            "Fleet");
         Directory.CreateDirectory(appDataPath);
 
         // Configure SQLite handlers
@@ -73,7 +73,7 @@ public class Startup
 
         // DB + MCP
         services.AddScoped<IMcpRepoManager, McpJsonRepoManager>();
-        services.AddScoped<IPluginManager>(sp =>
+        services.AddScoped<McpPluginManager>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<McpPluginManager>>();
             var repo = sp.GetRequiredService<IMcpRepoManager>();
@@ -85,8 +85,8 @@ public class Startup
         // Add services to the container.
 #pragma warning disable SKEXP0070
         services.AddAzureAIInferenceChatCompletion(
-            endpoint: new Uri(Environment.GetEnvironmentVariable("AZURE_ENDPOINT")!),
-            modelId: Environment.GetEnvironmentVariable("AZURE_MODEL_ID")!,
+            endpoint: new Uri(_configuration["AZURE_ENDPOINT"]!),
+            modelId: _configuration["AZURE_MODEL_ID"]!,
             apiKey: _configuration["AZURE_MISTRAL_NEMO_KEY"] ?? throw new InvalidOperationException("AZURE_MISTRAL_NEMO_KEY is missing")
         );
 
@@ -97,6 +97,7 @@ public class Startup
         services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
         services.AddScoped<ChatCompletionsRunner>();
 
+        services.AddHttpClient();
 
         services.AddRazorComponents()
             .AddInteractiveServerComponents();

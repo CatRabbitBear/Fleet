@@ -1,0 +1,71 @@
+﻿@page "/agents"
+@rendermode InteractiveServer
+@inject HttpClient Http
+
+<h1>Agent Debug</h1>
+
+<p>
+    Enter your message below and click <strong>Run Task</strong>. Only a single <em>User</em> message is sent.
+</p>
+
+<textarea @bind="UserInput" rows="4" placeholder="Type your message here..." style="width:100%;max-width:600px;"></textarea>
+<br />
+<button @onclick="RunTaskAsync" style="margin-top:.5rem;padding:.5rem 1rem;">Run Task</button>
+
+<div id="result" style="margin-top:1rem;white-space:pre-wrap;">
+    @ResultText
+</div>
+
+@code {
+    private string UserInput { get; set; } = string.Empty;
+    private string ResultText { get; set; } = string.Empty;
+
+    private async Task RunTaskAsync()
+    {
+        Console.WriteLine("RunTaskAsync called in Agents");
+        if (string.IsNullOrWhiteSpace(UserInput))
+        {
+            ResultText = "Please enter a message first.";
+            return;
+        }
+
+        ResultText = "Running...";
+        try
+        {
+            var payload = new
+            {
+                history = new[]
+                {
+                    new { role = "User", content = UserInput }
+                }
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/chat-completions/run-task", payload);
+
+            var data = await response.Content.ReadFromJsonAsync<RunTaskResponse>();
+
+            if (response.IsSuccessStatusCode && data is not null)
+            {
+                ResultText = data.Result
+                    + (string.IsNullOrEmpty(data.FilePath)
+                        ? string.Empty
+                        : $"\nFile output saved to: {data.FilePath}");
+            }
+            else
+            {
+                ResultText = $"Error: {data?.Error ?? response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ResultText = $"Request failed: {ex.Message}";
+        }
+    }
+
+    private class RunTaskResponse
+    {
+        public string Result { get; set; } = "";
+        public string? FilePath { get; set; }
+        public string? Error { get; set; }
+    }
+}
