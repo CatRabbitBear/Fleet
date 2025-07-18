@@ -1,15 +1,15 @@
 ﻿using Fleet.Blazor;
 using Fleet.Shared;
 using Fleet.Shared.Interfaces;
+using Fleet.Tray.Utils;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Toolkit.Uwp.Notifications;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Windows;
 using System.Runtime.Versioning;
-// using System.Windows.Forms;
-using Microsoft.Toolkit.Uwp.Notifications;
+using System.Windows;
 using Application = System.Windows.Application;
 
 namespace Fleet.Tray;
@@ -31,6 +31,9 @@ public partial class App : Application
             await PerformShutdownCleanupAsync();
         };
 
+        // Try and read credentials here, showing a pop_up to the user otherwise.
+        Dictionary<string, string?> managedKeys = GetManagedCredentials();
+
         try
         {
             // From .Shared, inject into .Blazor.
@@ -39,6 +42,11 @@ public partial class App : Application
             // 1) Spin up the web server
             _webHost = BlazorHostBuilder
                             .CreateHostBuilder(e.Args)
+                            .ConfigureAppConfiguration((ctx, cfg) =>
+                            {
+                                // this merges your secrets into IConfiguration
+                                cfg.AddInMemoryCollection(managedKeys);
+                            })
                             .ConfigureServices(services =>
                             {
                                 // notification service, etc.
@@ -151,6 +159,51 @@ public partial class App : Application
         }
 
         Console.WriteLine($"Permission '{request.Description}' granted: {granted}");
+    }
+
+    private Dictionary<string, string?> GetManagedCredentials()
+    {
+        // 1) Try to load all 5 secrets
+        var keys = new Dictionary<string, string?>();
+            foreach (var target in new[] {
+            "FLEET_AZURE_ENDPOINT",
+            "FLEET_AZURE_MODEL_ID",
+            "FLEET_AZURE_MODEL_KEY",
+            "FLEET_CORS_EXCEMPTION" // Needed to allow a browser extension to work - not bundled with app so should be ignored.
+        })
+        {
+            var (_, secret) = CredentialManagerHelper.LoadCredential(target);
+            keys[target] = secret;
+        }
+
+        // 2) If any missing, block here with a single dialog
+        if (keys.Values.Any(v => string.IsNullOrEmpty(v)))
+        {
+            var dlg = new BulkCredentialsWindow(keys);
+            // BulkCredentialsWindow should:
+            //  - Show 5 PasswordBoxes/TextBoxes labeled for each key
+            //  - Pre‑fill any existing secrets as "***" or leave blank
+            //  - Return a bool? from ShowDialog (true = OK/Save, false = cancel)
+            var result = dlg.ShowDialog();
+            if (result != true)
+            {
+                // user cancelled → bail out
+                Shutdown();
+                return keys;
+            }
+
+            // user clicked OK → pull back their entries and save them
+            foreach (var kv in dlg.ResultingKeys)
+            {
+                CredentialManagerHelper.SaveCredential(
+                    target: kv.Key,
+                    userName: string.Empty,
+                    secret: kv.Value!,
+                    useLocalMachine: true);
+                keys[kv.Key] = kv.Value;
+            }
+        }
+        return keys;
     }
 
     private void ShutdownApp()

@@ -33,7 +33,7 @@ public class Startup
         // migrate all your builder.Services.AddXyz(...) calls here
         //services.AddSerilog();
         Console.WriteLine($"Configuring services in Startup.cs {_configuration}");
-        var corsExemption = _configuration["CORS_EXCEMPTION"] ?? throw new InvalidOperationException("CORS_EXCEMPTION is missing");
+        var corsExemption = _configuration["FLEET_CORS_EXCEMPTION"] ?? throw new InvalidOperationException("FLEET_CORS_EXCEMPTION is missing");
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
@@ -85,9 +85,9 @@ public class Startup
         // Add services to the container.
 #pragma warning disable SKEXP0070
         services.AddAzureAIInferenceChatCompletion(
-            endpoint: new Uri(_configuration["AZURE_ENDPOINT"]!),
-            modelId: _configuration["AZURE_MODEL_ID"]!,
-            apiKey: _configuration["AZURE_MISTRAL_NEMO_KEY"] ?? throw new InvalidOperationException("AZURE_MISTRAL_NEMO_KEY is missing")
+            endpoint: new Uri(_configuration["FLEET_AZURE_ENDPOINT"]!),
+            modelId: _configuration["FLEET_AZURE_MODEL_ID"]!,
+            apiKey: _configuration["FLEET_AZURE_MODEL_KEY"] ?? throw new InvalidOperationException("FLEET_AZURE_MODEL_KEY is missing")
         );
 
         services.AddTransient((serviceProvider) =>
@@ -126,7 +126,7 @@ public class Startup
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
-        app.UseStaticFiles();
+        // app.UseStaticFiles();
         //app.UseStaticFiles(new StaticFileOptions
         //{
         //    FileProvider = new PhysicalFileProvider(env.WebRootPath)

@@ -17,6 +17,7 @@ public class PipelineContext
     public ChatHistory? ChatHistory { get; set; }
     public string? FinalResult { get; set; }
     public string? FilePath { get; set; }
+    public Dictionary<string, AgentContext> Agents { get; } = new();
 
     public PipelineContext(
         List<AgentRequestItem> history,

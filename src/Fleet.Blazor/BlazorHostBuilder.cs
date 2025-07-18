@@ -14,7 +14,7 @@ public static class BlazorHostBuilder
              .ConfigureWebHostDefaults(webBuilder =>
              {
                  // webBuilder.UseWebRoot(webRootPath);
-                 // webBuilder.UseStaticWebAssets();
+                 webBuilder.UseStaticWebAssets();
 
                  webBuilder.UseStartup<Startup>();
                  webBuilder.ConfigureKestrel(options =>
