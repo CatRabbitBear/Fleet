@@ -13,7 +13,7 @@ internal static class CredentialManagerHelper
     /// </param>
     /// <param name="secret">The secret string (URI, key, JSON, …).</param>
     /// <param name="useLocalMachine">
-    /// If true, credential is persisted machine‑wide; otherwise user‑only session.
+    /// If true, credential is persisted for the current user profile; otherwise user session only.
     /// </param>
     public static void SaveCredential(
         string target,
@@ -27,7 +27,7 @@ internal static class CredentialManagerHelper
             secret: secret,
             comment: null,
             persistence: useLocalMachine
-                               ? CredentialPersistence.LocalMachine
+                               ? CredentialPersistence.Enterprise
                                : CredentialPersistence.Session);
     }
 
