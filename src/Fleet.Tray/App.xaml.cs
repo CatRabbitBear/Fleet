@@ -223,6 +223,8 @@ public partial class App : Application
                 return keys;
             }
 
+            var credentialErrors = new List<string>();
+
             // user clicked OK → pull back their entries and save them
             foreach (var kv in dlg.ResultingKeys)
             {
@@ -230,7 +232,13 @@ public partial class App : Application
                 {
                     if (string.IsNullOrWhiteSpace(kv.Value))
                     {
-                        CredentialManagerHelper.DeleteCredential(kv.Key);
+                        if (!CredentialManagerHelper.TryDeleteCredential(kv.Key, out var deleteException))
+                        {
+                            StartupDiagnostics.Error($"Failed to delete credential '{kv.Key}'.", deleteException!);
+                            credentialErrors.Add(kv.Key);
+                            continue;
+                        }
+
                         keys[kv.Key] = null;
                         continue;
                     }
@@ -240,12 +248,31 @@ public partial class App : Application
                     continue;
                 }
 
-                CredentialManagerHelper.SaveCredential(
-                    target: kv.Key,
-                    userName: string.Empty,
-                    secret: kv.Value!,
-                    useLocalMachine: true);
-                keys[kv.Key] = kv.Value;
+                try
+                {
+                    CredentialManagerHelper.SaveCredential(
+                        target: kv.Key,
+                        userName: string.Empty,
+                        secret: kv.Value!,
+                        useLocalMachine: true);
+                    keys[kv.Key] = kv.Value;
+                }
+                catch (Exception ex)
+                {
+                    StartupDiagnostics.Error($"Failed to save credential '{kv.Key}'.", ex);
+                    credentialErrors.Add(kv.Key);
+                }
+            }
+
+            if (credentialErrors.Count != 0)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Fleet could not update one or more credentials: {string.Join(", ", credentialErrors)}. Please check startup.log for details.",
+                    "Credential update error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown();
+                return keys;
             }
 
             if (!Uri.TryCreate(keys["FLEET_AZURE_ENDPOINT"], UriKind.Absolute, out _))
