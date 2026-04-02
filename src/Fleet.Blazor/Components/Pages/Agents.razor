@@ -1,6 +1,7 @@
 ﻿@page "/agents"
 @rendermode InteractiveServer
 @inject HttpClient Http
+@inject Microsoft.Extensions.Logging.ILogger<Agents> Logger
 
 <h1>Agent Debug</h1>
 
@@ -22,10 +23,12 @@
 
     private async Task RunTaskAsync()
     {
-        Console.WriteLine("RunTaskAsync called in Agents");
+        Logger.LogInformation("Agents chatbox submit clicked. Input length: {InputLength}", UserInput?.Length ?? 0);
+        Fleet.Blazor.Utilities.ChatDiagnostics.Info($"UI submit initiated. InputLength={UserInput?.Length ?? 0}");
         if (string.IsNullOrWhiteSpace(UserInput))
         {
             ResultText = "Please enter a message first.";
+            Fleet.Blazor.Utilities.ChatDiagnostics.Info("UI submit blocked because input is empty.");
             return;
         }
 
@@ -40,9 +43,23 @@
                 }
             };
 
-            var response = await Http.PostAsJsonAsync("/api/chat-completions/run-task", payload);
+            var route = "/api/chat-completions/run-task";
+            Logger.LogInformation("Posting chat request to {Route}", route);
+            Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Posting request to {route}");
 
-            var data = await response.Content.ReadFromJsonAsync<RunTaskResponse>();
+            var response = await Http.PostAsJsonAsync(route, payload);
+            var rawBody = await response.Content.ReadAsStringAsync();
+            Logger.LogInformation("Chat request completed with status {StatusCode}. Body length: {BodyLength}", (int)response.StatusCode, rawBody.Length);
+            Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Response status={(int)response.StatusCode}, reason={response.ReasonPhrase}, bodyLength={rawBody.Length}");
+
+            RunTaskResponse? data = null;
+            if (!string.IsNullOrWhiteSpace(rawBody))
+            {
+                data = System.Text.Json.JsonSerializer.Deserialize<RunTaskResponse>(rawBody, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
 
             if (response.IsSuccessStatusCode && data is not null)
             {
@@ -54,11 +71,14 @@
             else
             {
                 ResultText = $"Error: {data?.Error ?? response.ReasonPhrase}";
+                Fleet.Blazor.Utilities.ChatDiagnostics.Info($"UI displayed error. Status={(int)response.StatusCode}, ParsedError={data?.Error ?? "<null>"}");
             }
         }
         catch (Exception ex)
         {
             ResultText = $"Request failed: {ex.Message}";
+            Logger.LogError(ex, "Agents chatbox request failed.");
+            Fleet.Blazor.Utilities.ChatDiagnostics.Error("UI request failed.", ex);
         }
     }
 
