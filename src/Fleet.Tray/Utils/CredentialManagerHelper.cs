@@ -54,4 +54,31 @@ internal static class CredentialManagerHelper
     {
         CredentialManager.DeleteCredential(applicationName: target);
     }
+
+    /// <summary>
+    /// Deletes a credential if it exists. Missing credentials are treated as success.
+    /// </summary>
+    public static bool TryDeleteCredential(string target, out Exception? exception)
+    {
+        exception = null;
+        try
+        {
+            CredentialManager.DeleteCredential(applicationName: target);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Deleting a credential that does not exist is not an actionable error for callers.
+            var message = ex.Message ?? string.Empty;
+            if (message.Contains("cannot find", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("element", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            exception = ex;
+            return false;
+        }
+    }
 }

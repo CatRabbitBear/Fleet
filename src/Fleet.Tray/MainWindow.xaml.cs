@@ -58,11 +58,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        var failedTargets = new List<string>();
         foreach (var entry in dialog.ResultingKeys)
         {
             if (entry.Key == "FLEET_CORS_EXCEMPTION" && string.IsNullOrWhiteSpace(entry.Value))
             {
-                CredentialManagerHelper.DeleteCredential(entry.Key);
+                if (!CredentialManagerHelper.TryDeleteCredential(entry.Key, out var deleteException))
+                {
+                    StartupDiagnostics.Error($"Failed to delete credential '{entry.Key}'.", deleteException!);
+                    failedTargets.Add(entry.Key);
+                }
                 continue;
             }
 
@@ -71,11 +76,25 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            CredentialManagerHelper.SaveCredential(
-                target: entry.Key,
-                userName: string.Empty,
-                secret: entry.Value,
-                useLocalMachine: true);
+            try
+            {
+                CredentialManagerHelper.SaveCredential(
+                    target: entry.Key,
+                    userName: string.Empty,
+                    secret: entry.Value,
+                    useLocalMachine: true);
+            }
+            catch (Exception ex)
+            {
+                StartupDiagnostics.Error($"Failed to save credential '{entry.Key}'.", ex);
+                failedTargets.Add(entry.Key);
+            }
+        }
+
+        if (failedTargets.Count != 0)
+        {
+            StatusTextBlock.Text = $"Some credentials failed to save: {string.Join(", ", failedTargets)}. See startup.log.";
+            return;
         }
 
         StatusTextBlock.Text = "Azure credentials saved. Restart Fleet to reload runtime settings.";
