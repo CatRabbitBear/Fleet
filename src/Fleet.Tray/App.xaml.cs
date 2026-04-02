@@ -163,7 +163,7 @@ public partial class App : Application
 
     private Dictionary<string, string?> GetManagedCredentials()
     {
-        // 1) Try to load all 5 secrets
+        // 1) Try to load all required secrets.
         var keys = new Dictionary<string, string?>();
             foreach (var target in new[] {
             "FLEET_AZURE_ENDPOINT",
@@ -177,13 +177,9 @@ public partial class App : Application
         }
 
         // 2) If any missing, block here with a single dialog
-        if (keys.Values.Any(v => string.IsNullOrEmpty(v)))
+        if (keys.Values.Any(v => string.IsNullOrWhiteSpace(v)))
         {
             var dlg = new BulkCredentialsWindow(keys);
-            // BulkCredentialsWindow should:
-            //  - Show 5 PasswordBoxes/TextBoxes labeled for each key
-            //  - Pre‑fill any existing secrets as "***" or leave blank
-            //  - Return a bool? from ShowDialog (true = OK/Save, false = cancel)
             var result = dlg.ShowDialog();
             if (result != true)
             {
@@ -195,6 +191,11 @@ public partial class App : Application
             // user clicked OK → pull back their entries and save them
             foreach (var kv in dlg.ResultingKeys)
             {
+                if (string.IsNullOrWhiteSpace(kv.Value))
+                {
+                    continue;
+                }
+
                 CredentialManagerHelper.SaveCredential(
                     target: kv.Key,
                     userName: string.Empty,
@@ -202,7 +203,18 @@ public partial class App : Application
                     useLocalMachine: true);
                 keys[kv.Key] = kv.Value;
             }
+
+            if (!Uri.TryCreate(keys["FLEET_AZURE_ENDPOINT"], UriKind.Absolute, out _))
+            {
+                MessageBox.Show(
+                    "The Azure endpoint must be a valid absolute URI.",
+                    "Invalid Azure endpoint",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown();
+            }
         }
+
         return keys;
     }
 

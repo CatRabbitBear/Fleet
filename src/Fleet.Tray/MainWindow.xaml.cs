@@ -1,18 +1,8 @@
-﻿using Fleet.Shared;
+﻿using Fleet.Tray.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Application = System.Windows.Application;
 
 namespace Fleet.Tray;
@@ -23,22 +13,28 @@ namespace Fleet.Tray;
 public partial class MainWindow : Window
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private static readonly string[] CredentialTargets =
+    {
+        "FLEET_AZURE_ENDPOINT",
+        "FLEET_AZURE_MODEL_ID",
+        "FLEET_AZURE_MODEL_KEY",
+        "FLEET_CORS_EXCEMPTION"
+    };
+
     public MainWindow()
     {
         InitializeComponent();
 
-        // Resolve the factory from the DI container
+        // Resolve the factory from the DI container.
         _httpClientFactory = ((App)Application.Current)
             .WebHost.Services
             .GetRequiredService<IHttpClientFactory>();
 
-        this.Closing += OnClosing;
+        Closing += OnClosing;
     }
 
     private async Task RefreshStatus()
     {
-        // var client = _httpClientFactory.CreateClient("FleetApi");
-        // var status = await client.GetFromJsonAsync<Class1>("api/health/detail");
         var status = new { message = "Hello from Fleet!" };
         StatusTextBlock.Text = $"Message: {status?.message}";
     }
@@ -48,10 +44,41 @@ public partial class MainWindow : Window
         await RefreshStatus();
     }
 
+    private void ConfigureCredentialsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var existing = CredentialTargets.ToDictionary(
+            key => key,
+            key => CredentialManagerHelper.LoadCredential(key).Secret);
+
+        var dialog = new BulkCredentialsWindow(existing);
+        var result = dialog.ShowDialog();
+
+        if (result != true)
+        {
+            return;
+        }
+
+        foreach (var entry in dialog.ResultingKeys)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Value))
+            {
+                continue;
+            }
+
+            CredentialManagerHelper.SaveCredential(
+                target: entry.Key,
+                userName: string.Empty,
+                secret: entry.Value,
+                useLocalMachine: true);
+        }
+
+        StatusTextBlock.Text = "Azure credentials saved. Restart Fleet to reload runtime settings.";
+    }
+
     private void OnClosing(object? sender, CancelEventArgs e)
     {
-        // Cancel the close and just hide instead
+        // Cancel the close and just hide instead.
         e.Cancel = true;
-        this.Hide();
+        Hide();
     }
 }

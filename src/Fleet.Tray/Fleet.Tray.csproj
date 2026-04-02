@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <PackageReference Include="Meziantou.Framework.Win32.CredentialManager" Version="1.7.4" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.7" />
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
