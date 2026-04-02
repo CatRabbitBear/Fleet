@@ -60,6 +60,12 @@ public partial class MainWindow : Window
 
         foreach (var entry in dialog.ResultingKeys)
         {
+            if (entry.Key == "FLEET_CORS_EXCEMPTION" && string.IsNullOrWhiteSpace(entry.Value))
+            {
+                CredentialManagerHelper.DeleteCredential(entry.Key);
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(entry.Value))
             {
                 continue;
