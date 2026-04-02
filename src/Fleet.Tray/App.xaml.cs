@@ -43,7 +43,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             StartupDiagnostics.Error("Credential load failed.", ex);
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 "Fleet failed to load credentials. Please check the startup log for details.",
                 "Fleet startup error",
                 MessageBoxButton.OK,
@@ -86,7 +86,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             StartupDiagnostics.Error("Fleet.Blazor host failed to start.", ex);
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 "Fleet web host failed to start. This can happen due to HTTPS certificate trust, port conflicts, or invalid credentials. Check startup logs for full exception details.",
                 "Fleet startup error",
                 MessageBoxButton.OK,
@@ -235,7 +235,7 @@ public partial class App : Application
             if (!Uri.TryCreate(keys["FLEET_AZURE_ENDPOINT"], UriKind.Absolute, out _))
             {
                 StartupDiagnostics.Info("Credential validation failed: FLEET_AZURE_ENDPOINT is not a valid absolute URI.");
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     "The Azure endpoint must be a valid absolute URI.",
                     "Invalid Azure endpoint",
                     MessageBoxButton.OK,
