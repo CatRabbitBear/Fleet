@@ -40,6 +40,7 @@ This app expects an **Azure OpenAI endpoint + deployment name + key** using the 
    - Endpoint URL (`FLEET_AZURE_ENDPOINT` or `FLEET_AZURE_OPENAI_ENDPOINT`)
    - API key (`FLEET_AZURE_MODEL_KEY` or `FLEET_AZURE_OPENAI_API_KEY`)
 2. Confirm the endpoint is an absolute URI.
+3. Optional: set `FLEET_OPENAI_PROVIDER` explicitly to `openai-v1` or `azure-openai`.
 
 ### 4) Configure CORS exemption value
 
