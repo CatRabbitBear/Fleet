@@ -25,21 +25,39 @@ public partial class App : Application
 
     private async void App_Startup(object sender, StartupEventArgs e)
     {
+        StartupDiagnostics.InitializeGlobalExceptionLogging();
+        StartupDiagnostics.Info("Fleet.Tray startup initiated.");
 
         this.Exit += async (_, __) =>
         {
             await PerformShutdownCleanupAsync();
         };
 
-        // Try and read credentials here, showing a pop_up to the user otherwise.
-        Dictionary<string, string?> managedKeys = GetManagedCredentials();
+        Dictionary<string, string?> managedKeys;
+        try
+        {
+            // Try and read credentials here, showing a pop_up to the user otherwise.
+            managedKeys = GetManagedCredentials();
+            StartupDiagnostics.Info($"Credential load completed. Endpoint set: {!string.IsNullOrWhiteSpace(managedKeys.GetValueOrDefault("FLEET_AZURE_ENDPOINT"))}, Model set: {!string.IsNullOrWhiteSpace(managedKeys.GetValueOrDefault("FLEET_AZURE_MODEL_ID"))}, Key set: {!string.IsNullOrWhiteSpace(managedKeys.GetValueOrDefault("FLEET_AZURE_MODEL_KEY"))}");
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.Error("Credential load failed.", ex);
+            MessageBox.Show(
+                "Fleet failed to load credentials. Please check the startup log for details.",
+                "Fleet startup error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown();
+            return;
+        }
 
         try
         {
             // From .Shared, inject into .Blazor.
             _notificationService = new NotificationService();
+            StartupDiagnostics.Info("Building Fleet.Blazor host.");
 
-            // 1) Spin up the web server
             _webHost = BlazorHostBuilder
                             .CreateHostBuilder(e.Args)
                             .ConfigureAppConfiguration((ctx, cfg) =>
@@ -60,11 +78,19 @@ public partial class App : Application
                                 });
                             })
                             .Build();
+
+            StartupDiagnostics.Info("Starting Fleet.Blazor host on https://localhost:5001.");
             await _webHost.StartAsync();
+            StartupDiagnostics.Info("Fleet.Blazor host started successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            StartupDiagnostics.Error("Fleet.Blazor host failed to start.", ex);
+            MessageBox.Show(
+                "Fleet web host failed to start. This can happen due to HTTPS certificate trust, port conflicts, or invalid credentials. Check startup logs for full exception details.",
+                "Fleet startup error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             Shutdown();
             return;
         }
@@ -118,20 +144,20 @@ public partial class App : Application
                 }
                 }
             };
+            StartupDiagnostics.Info("Tray icon initialized successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to create tray icon: {ex.Message}");
+            StartupDiagnostics.Error("Failed to create tray icon.", ex);
             await PerformShutdownCleanupAsync();
             Shutdown();
             return;
         }
 
-
-
         // Create (but don’t show) the dashboard window
         _mainWindow = new MainWindow();
         _mainWindow.Hide();  // ensure it starts hidden
+        StartupDiagnostics.Info("Main window initialized and hidden.");
 
         // Handle notifications from .Blazor
         _notificationService.OnPermissionRequested += HandlePermissionRequest;
@@ -158,14 +184,14 @@ public partial class App : Application
             granted = false;  // Default to deny after timeout
         }
 
-        Console.WriteLine($"Permission '{request.Description}' granted: {granted}");
+        StartupDiagnostics.Info($"Permission '{request.Description}' granted: {granted}");
     }
 
     private Dictionary<string, string?> GetManagedCredentials()
     {
         // 1) Try to load all required secrets.
         var keys = new Dictionary<string, string?>();
-            foreach (var target in new[] {
+        foreach (var target in new[] {
             "FLEET_AZURE_ENDPOINT",
             "FLEET_AZURE_MODEL_ID",
             "FLEET_AZURE_MODEL_KEY",
@@ -179,11 +205,13 @@ public partial class App : Application
         // 2) If any missing, block here with a single dialog
         if (keys.Values.Any(v => string.IsNullOrWhiteSpace(v)))
         {
+            StartupDiagnostics.Info("One or more credentials missing. Showing bulk credentials dialog.");
             var dlg = new BulkCredentialsWindow(keys);
             var result = dlg.ShowDialog();
             if (result != true)
             {
                 // user cancelled → bail out
+                StartupDiagnostics.Info("Credential entry canceled by user.");
                 Shutdown();
                 return keys;
             }
@@ -206,6 +234,7 @@ public partial class App : Application
 
             if (!Uri.TryCreate(keys["FLEET_AZURE_ENDPOINT"], UriKind.Absolute, out _))
             {
+                StartupDiagnostics.Info("Credential validation failed: FLEET_AZURE_ENDPOINT is not a valid absolute URI.");
                 MessageBox.Show(
                     "The Azure endpoint must be a valid absolute URI.",
                     "Invalid Azure endpoint",
@@ -225,7 +254,7 @@ public partial class App : Application
 
     private async Task PerformShutdownCleanupAsync()
     {
-        Console.WriteLine("Shutting Down App!");
+        StartupDiagnostics.Info("Shutting down app and cleaning up resources.");
         ToastNotificationManagerCompat.History.Clear();
         ToastNotificationManagerCompat.Uninstall();
         _trayIcon?.Dispose();
