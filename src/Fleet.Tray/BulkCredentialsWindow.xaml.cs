@@ -49,7 +49,7 @@ public partial class BulkCredentialsWindow : Window
             string.IsNullOrWhiteSpace(model) ||
             (string.IsNullOrWhiteSpace(apiKey) && string.IsNullOrWhiteSpace(_existingKeys.GetValueOrDefault("FLEET_AZURE_MODEL_KEY"))))
         {
-            System.Windows.MessageBox.Show("Please fill in all required fields (OpenAI Endpoint, Model/Deployment, API Key).", "Missing Information", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show("Please fill in all required fields (Azure OpenAI Endpoint, Deployment Name, API Key).", "Missing Information", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

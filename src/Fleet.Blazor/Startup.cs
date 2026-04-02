@@ -98,36 +98,15 @@ public class Startup
 
         // services.AddControllers();
         // Add services to the container.
-        var endpointText = ResolveRequiredSetting("FLEET_OPENAI_ENDPOINT", "FLEET_AZURE_OPENAI_ENDPOINT", "FLEET_AZURE_ENDPOINT");
-        var modelId = ResolveRequiredSetting("FLEET_OPENAI_MODEL_ID", "FLEET_AZURE_OPENAI_DEPLOYMENT", "FLEET_AZURE_MODEL_ID");
-        var apiKey = ResolveRequiredSetting("FLEET_OPENAI_API_KEY", "FLEET_AZURE_OPENAI_API_KEY", "FLEET_AZURE_MODEL_KEY");
-        var providerOverride = _configuration["FLEET_OPENAI_PROVIDER"]?.Trim();
+        var endpoint = ResolveRequiredSetting("FLEET_AZURE_OPENAI_ENDPOINT", "FLEET_AZURE_ENDPOINT");
+        var deployment = ResolveRequiredSetting("FLEET_AZURE_OPENAI_DEPLOYMENT", "FLEET_AZURE_MODEL_ID");
+        var apiKey = ResolveRequiredSetting("FLEET_AZURE_OPENAI_API_KEY", "FLEET_AZURE_MODEL_KEY");
 
-        if (!Uri.TryCreate(endpointText, UriKind.Absolute, out var endpointUri))
-        {
-            throw new InvalidOperationException($"Configured OpenAI endpoint is not a valid absolute URI: '{endpointText}'.");
-        }
-
-        var provider = ResolveProvider(endpointUri, providerOverride);
-        var sanitizedEndpoint = $"{endpointUri.Scheme}://{endpointUri.Authority}{endpointUri.AbsolutePath}";
-        Console.WriteLine($"Registering chat connector. Provider={provider}, ModelOrDeployment={modelId}, Endpoint={sanitizedEndpoint}");
-
-        if (provider == "azure-openai")
-        {
-            services.AddAzureOpenAIChatCompletion(
-                deploymentName: modelId,
-                endpoint: new Uri($"{endpointUri.Scheme}://{endpointUri.Authority}"),
-                apiKey: apiKey
-            );
-        }
-        else
-        {
-            services.AddOpenAIChatCompletion(
-                modelId: modelId,
-                endpoint: endpointUri,
-                apiKey: apiKey
-            );
-        }
+        services.AddAzureOpenAIChatCompletion(
+            deploymentName: deployment,
+            endpoint: endpoint,
+            apiKey: apiKey
+        );
 
         services.AddTransient((serviceProvider) =>
         {
@@ -202,35 +181,5 @@ public class Startup
 
         throw new InvalidOperationException(
             $"Missing required setting. Provide one of: {string.Join(", ", keys)}");
-    }
-
-    private static string ResolveProvider(Uri endpointUri, string? providerOverride)
-    {
-        if (!string.IsNullOrWhiteSpace(providerOverride))
-        {
-            var normalized = providerOverride.Trim().ToLowerInvariant();
-            if (normalized is "openai-v1" or "openai")
-            {
-                return "openai-v1";
-            }
-
-            if (normalized is "azure-openai" or "azure")
-            {
-                return "azure-openai";
-            }
-
-            throw new InvalidOperationException(
-                "FLEET_OPENAI_PROVIDER must be one of: openai-v1, azure-openai.");
-        }
-
-        var host = endpointUri.Host.ToLowerInvariant();
-        var path = endpointUri.AbsolutePath.TrimEnd('/').ToLowerInvariant();
-
-        if (host.EndsWith(".openai.azure.com") && (string.IsNullOrWhiteSpace(path) || path == "/"))
-        {
-            return "azure-openai";
-        }
-
-        return "openai-v1";
     }
 }

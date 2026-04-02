@@ -20,30 +20,25 @@ Fleet is a proof-of-concept app that hosts a Blazor Server app from a Windows tr
   3. Starts Blazor host (`Fleet.Blazor`) with those values injected into `IConfiguration`.
   4. Creates tray icon and menu.
 
-## OpenAI-compatible setup (required to connect the app)
+## Azure OpenAI setup (required to connect the app)
 
-Fleet now supports two modes via Semantic Kernel's OpenAI connector:
+This app expects an **Azure OpenAI endpoint + deployment name + key** using the Semantic Kernel OpenAI connector (`AddAzureOpenAIChatCompletion`).
 
-- **openai-v1 (default):** `AddOpenAIChatCompletion(modelId, endpoint, apiKey)` for Azure AI Foundry/OpenAI-compatible endpoints (including `/openai/v1/...` style endpoints).
-- **azure-openai:** `AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey)` for classic Azure OpenAI resource endpoints (`https://{resource}.openai.azure.com`).
+### 1) Create or open an Azure OpenAI resource
 
-### 1) Choose endpoint type
-
-Use one of:
-
-1. **Azure AI Foundry / OpenAI v1 endpoint** (recommended for new setups)
-2. **Azure OpenAI resource endpoint** (`https://{resource}.openai.azure.com`)
+1. Open Azure portal and create/select your Azure OpenAI resource.
+2. Ensure your resource has a chat-capable model deployed.
 
 ### 2) Deploy a model for chat
 
-1. Deploy a chat-capable model.
-2. Record the model/deployment identifier passed as `FLEET_AZURE_MODEL_ID` (or `FLEET_OPENAI_MODEL_ID`).
+1. In the project, deploy a model you want Fleet to use.
+2. Record the deployment name you will pass as `FLEET_AZURE_MODEL_ID` (or `FLEET_AZURE_OPENAI_DEPLOYMENT`).
 
 ### 3) Gather endpoint and API key
 
-1. Copy:
-   - Endpoint URL (`FLEET_OPENAI_ENDPOINT`, or legacy `FLEET_AZURE_ENDPOINT`)
-   - API key (`FLEET_OPENAI_API_KEY`, or legacy `FLEET_AZURE_MODEL_KEY`)
+1. In your Azure OpenAI resource keys/settings, copy:
+   - Endpoint URL (`FLEET_AZURE_ENDPOINT` or `FLEET_AZURE_OPENAI_ENDPOINT`)
+   - API key (`FLEET_AZURE_MODEL_KEY` or `FLEET_AZURE_OPENAI_API_KEY`)
 2. Confirm the endpoint is an absolute URI.
 3. Optional: set `FLEET_OPENAI_PROVIDER` explicitly to `openai-v1` or `azure-openai`.
 
@@ -55,9 +50,9 @@ Use one of:
 ### 5) Run Fleet and enter credentials
 
 1. Launch `Fleet.Tray`.
-2. Fill the setup dialog:
-   - OpenAI Endpoint
-   - Model / Deployment Name
+2. Fill the Azure setup dialog:
+   - Azure OpenAI Endpoint
+   - Deployment Name
    - API Key
    - Optional CORS exemption
 3. Click **OK**. Credentials are persisted in Windows Credential Manager.
