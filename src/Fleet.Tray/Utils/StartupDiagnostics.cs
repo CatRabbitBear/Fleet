@@ -1,5 +1,7 @@
+using System.IO;
 using System.Text;
 using System.Windows;
+using Application = System.Windows.Application;
 
 namespace Fleet.Tray.Utils;
 
