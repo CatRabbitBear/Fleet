@@ -21,6 +21,8 @@ internal static class CredentialManagerHelper
         string secret,
         bool useLocalMachine = true)
     {
+        // Defensive clear to avoid stale/duplicate entries in Windows Credential Manager.
+        TryDeleteCredential(target, out _);
         CredentialManager.WriteCredential(
             applicationName: target,
             userName: userName,

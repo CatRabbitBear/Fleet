@@ -61,7 +61,8 @@ public partial class MainWindow : Window
         var failedTargets = new List<string>();
         foreach (var entry in dialog.ResultingKeys)
         {
-            if (entry.Key == "FLEET_CORS_EXCEMPTION" && string.IsNullOrWhiteSpace(entry.Value))
+            var normalizedValue = entry.Value?.Trim();
+            if (entry.Key == "FLEET_CORS_EXCEMPTION" && string.IsNullOrWhiteSpace(normalizedValue))
             {
                 if (!CredentialManagerHelper.TryDeleteCredential(entry.Key, out var deleteException))
                 {
@@ -71,7 +72,7 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(entry.Value))
+            if (string.IsNullOrWhiteSpace(normalizedValue))
             {
                 continue;
             }
@@ -81,7 +82,7 @@ public partial class MainWindow : Window
                 CredentialManagerHelper.SaveCredential(
                     target: entry.Key,
                     userName: string.Empty,
-                    secret: entry.Value,
+                    secret: normalizedValue!,
                     useLocalMachine: true);
             }
             catch (Exception ex)

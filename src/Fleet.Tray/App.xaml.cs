@@ -228,10 +228,11 @@ public partial class App : Application
             // user clicked OK → pull back their entries and save them
             foreach (var kv in dlg.ResultingKeys)
             {
-                StartupDiagnostics.Info($"Attempting to persist credential '{kv.Key}'. Value provided: {!string.IsNullOrWhiteSpace(kv.Value)}");
+                var normalizedValue = kv.Value?.Trim();
+                StartupDiagnostics.Info($"Attempting to persist credential '{kv.Key}'. Value provided: {!string.IsNullOrWhiteSpace(normalizedValue)}");
                 if (kv.Key == "FLEET_CORS_EXCEMPTION")
                 {
-                    if (string.IsNullOrWhiteSpace(kv.Value))
+                    if (string.IsNullOrWhiteSpace(normalizedValue))
                     {
                         if (!CredentialManagerHelper.TryDeleteCredential(kv.Key, out var deleteException))
                         {
@@ -245,7 +246,7 @@ public partial class App : Application
                         continue;
                     }
                 }
-                else if (string.IsNullOrWhiteSpace(kv.Value))
+                else if (string.IsNullOrWhiteSpace(normalizedValue))
                 {
                     continue;
                 }
@@ -255,9 +256,9 @@ public partial class App : Application
                     CredentialManagerHelper.SaveCredential(
                         target: kv.Key,
                         userName: string.Empty,
-                        secret: kv.Value!,
+                        secret: normalizedValue!,
                         useLocalMachine: true);
-                    keys[kv.Key] = kv.Value;
+                    keys[kv.Key] = normalizedValue;
                     StartupDiagnostics.Info($"Credential '{kv.Key}' saved successfully.");
                 }
                 catch (Exception ex)
