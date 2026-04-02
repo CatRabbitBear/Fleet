@@ -20,26 +20,25 @@ Fleet is a proof-of-concept app that hosts a Blazor Server app from a Windows tr
   3. Starts Blazor host (`Fleet.Blazor`) with those values injected into `IConfiguration`.
   4. Creates tray icon and menu.
 
-## Azure setup (required to connect the app)
+## Azure OpenAI setup (required to connect the app)
 
-This app expects an **Azure AI Foundry project endpoint + model + key** for the Semantic Kernel Azure AI Inference connector.
+This app expects an **Azure OpenAI endpoint + deployment name + key** using the Semantic Kernel OpenAI connector (`AddAzureOpenAIChatCompletion`).
 
-### 1) Create or open an Azure AI Foundry project
+### 1) Create or open an Azure OpenAI resource
 
-1. Open Azure AI Foundry.
-2. Create a new project (or reuse an existing one).
-3. Ensure the project has access to a chat-capable model deployment.
+1. Open Azure portal and create/select your Azure OpenAI resource.
+2. Ensure your resource has a chat-capable model deployed.
 
 ### 2) Deploy a model for chat
 
 1. In the project, deploy a model you want Fleet to use.
-2. Record the model/deployment identifier you will pass as `FLEET_AZURE_MODEL_ID`.
+2. Record the deployment name you will pass as `FLEET_AZURE_MODEL_ID` (or `FLEET_AZURE_OPENAI_DEPLOYMENT`).
 
-### 3) Generate an API key and endpoint
+### 3) Gather endpoint and API key
 
-1. In the project/API settings, copy:
-   - Endpoint URL (`FLEET_AZURE_ENDPOINT`)
-   - API key (`FLEET_AZURE_MODEL_KEY`)
+1. In your Azure OpenAI resource keys/settings, copy:
+   - Endpoint URL (`FLEET_AZURE_ENDPOINT` or `FLEET_AZURE_OPENAI_ENDPOINT`)
+   - API key (`FLEET_AZURE_MODEL_KEY` or `FLEET_AZURE_OPENAI_API_KEY`)
 2. Confirm the endpoint is an absolute URI.
 
 ### 4) Configure CORS exemption value
@@ -51,8 +50,8 @@ This app expects an **Azure AI Foundry project endpoint + model + key** for the 
 
 1. Launch `Fleet.Tray`.
 2. Fill the Azure setup dialog:
-   - Azure Endpoint
-   - Azure Model ID
+   - Azure OpenAI Endpoint
+   - Deployment Name
    - API Key
    - Optional CORS exemption
 3. Click **OK**. Credentials are persisted in Windows Credential Manager.

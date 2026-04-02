@@ -98,11 +98,14 @@ public class Startup
 
         // services.AddControllers();
         // Add services to the container.
-#pragma warning disable SKEXP0070
-        services.AddAzureAIInferenceChatCompletion(
-            endpoint: new Uri(_configuration["FLEET_AZURE_ENDPOINT"]!),
-            modelId: _configuration["FLEET_AZURE_MODEL_ID"]!,
-            apiKey: _configuration["FLEET_AZURE_MODEL_KEY"] ?? throw new InvalidOperationException("FLEET_AZURE_MODEL_KEY is missing")
+        var endpoint = ResolveRequiredSetting("FLEET_AZURE_OPENAI_ENDPOINT", "FLEET_AZURE_ENDPOINT");
+        var deployment = ResolveRequiredSetting("FLEET_AZURE_OPENAI_DEPLOYMENT", "FLEET_AZURE_MODEL_ID");
+        var apiKey = ResolveRequiredSetting("FLEET_AZURE_OPENAI_API_KEY", "FLEET_AZURE_MODEL_KEY");
+
+        services.AddAzureOpenAIChatCompletion(
+            deploymentName: deployment,
+            endpoint: endpoint,
+            apiKey: apiKey
         );
 
         services.AddTransient((serviceProvider) =>
@@ -163,5 +166,20 @@ public class Startup
             endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode(); // Moved to endpoints
             //endpoints.MapBlazorHub();
         });
+    }
+
+    private string ResolveRequiredSetting(params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            var value = _configuration[key];
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Missing required setting. Provide one of: {string.Join(", ", keys)}");
     }
 }
