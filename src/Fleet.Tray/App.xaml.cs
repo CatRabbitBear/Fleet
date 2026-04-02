@@ -206,7 +206,7 @@ public partial class App : Application
 
             if (!Uri.TryCreate(keys["FLEET_AZURE_ENDPOINT"], UriKind.Absolute, out _))
             {
-                MessageBox.Show(
+                System.Windows.MessageBox.Show(
                     "The Azure endpoint must be a valid absolute URI.",
                     "Invalid Azure endpoint",
                     MessageBoxButton.OK,
