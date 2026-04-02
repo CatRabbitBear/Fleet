@@ -17,6 +17,13 @@ namespace Fleet.Tray;
 [SupportedOSPlatform("windows")]
 public partial class App : Application
 {
+    private static readonly string[] RequiredCredentialTargets =
+    {
+        "FLEET_AZURE_ENDPOINT",
+        "FLEET_AZURE_MODEL_ID",
+        "FLEET_AZURE_MODEL_KEY"
+    };
+
     private NotifyIcon? _trayIcon;
     private IHost? _webHost;
     private MainWindow? _mainWindow;
@@ -203,7 +210,7 @@ public partial class App : Application
         }
 
         // 2) If any missing, block here with a single dialog
-        if (keys.Values.Any(v => string.IsNullOrWhiteSpace(v)))
+        if (RequiredCredentialTargets.Any(target => string.IsNullOrWhiteSpace(keys.GetValueOrDefault(target))))
         {
             StartupDiagnostics.Info("One or more credentials missing. Showing bulk credentials dialog.");
             var dlg = new BulkCredentialsWindow(keys);
@@ -219,7 +226,16 @@ public partial class App : Application
             // user clicked OK → pull back their entries and save them
             foreach (var kv in dlg.ResultingKeys)
             {
-                if (string.IsNullOrWhiteSpace(kv.Value))
+                if (kv.Key == "FLEET_CORS_EXCEMPTION")
+                {
+                    if (string.IsNullOrWhiteSpace(kv.Value))
+                    {
+                        CredentialManagerHelper.DeleteCredential(kv.Key);
+                        keys[kv.Key] = null;
+                        continue;
+                    }
+                }
+                else if (string.IsNullOrWhiteSpace(kv.Value))
                 {
                     continue;
                 }

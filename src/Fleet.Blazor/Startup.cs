@@ -33,16 +33,31 @@ public class Startup
         // migrate all your builder.Services.AddXyz(...) calls here
         //services.AddSerilog();
         Console.WriteLine($"Configuring services in Startup.cs {_configuration}");
-        var corsExemption = _configuration["FLEET_CORS_EXCEMPTION"] ?? throw new InvalidOperationException("FLEET_CORS_EXCEMPTION is missing");
+        var corsExemption = _configuration["FLEET_CORS_EXCEMPTION"];
+        var corsOrigins = (corsExemption ?? string.Empty)
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .ToArray();
+
         services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
             {
+                if (corsOrigins.Length > 0)
+                {
+                    policy
+                        // *exactly* your extension origin(s), no "@temporary-addon"
+                        .WithOrigins(corsOrigins)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                    return;
+                }
+
+                // No explicit CORS origin configured. Same-origin requests continue to work,
+                // and cross-origin requests are denied by default.
                 policy
-                  // *exactly* your extension origin, no "@temporary-addon"
-                  .WithOrigins(corsExemption)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
             });
         });
 
