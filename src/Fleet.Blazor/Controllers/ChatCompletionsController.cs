@@ -1,5 +1,6 @@
 ﻿using Fleet.Blazor.Agents;
 using Fleet.Blazor.Pipeline.Dtos;
+using Fleet.Blazor.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,18 +22,19 @@ public class ChatCompletionsController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("RunTask invoked. History count: {Count}", req.History.Count);
+            ChatDiagnostics.Info($"API RunTask invoked. HistoryCount={req.History.Count}");
+
             var result = await _chatCompletionsRunner.RunTaskAsync(req.History);
-            //var result = new AgentResponse
-            //{
-            //    Result = "This is a mock response for the task.",
-            //    FilePath = null // or set to a valid file path if needed
-            //};
+
             _logger.LogInformation("Task completed successfully by chat completions runner. Items returned : {Count}", req.History.Count);
+            ChatDiagnostics.Info($"API RunTask completed successfully. HistoryCount={req.History.Count}");
             return Ok(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error running task in chat completions runner.");
+            ChatDiagnostics.Error("API RunTask failed.", ex);
             return BadRequest(new { error = ex.Message });
         }
     }

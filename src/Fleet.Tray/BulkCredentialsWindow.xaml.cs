@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Fleet.Tray.Utils;
 
 
 namespace Fleet.Tray;
@@ -38,6 +39,7 @@ public partial class BulkCredentialsWindow : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
+        StartupDiagnostics.Info("Bulk credentials dialog OK clicked.");
         // Validate required fields
         var endpoint = EndpointTextBox.Text.Trim();
         var model = ModelTextBox.Text.Trim();
@@ -59,6 +61,8 @@ public partial class BulkCredentialsWindow : Window
             : apiKey;
         // Optional
         ResultingKeys["FLEET_CORS_EXCEMPTION"] = CorsExceptionTextBox.Text.Trim();
+
+        StartupDiagnostics.Info($"Bulk credentials collected. EndpointProvided={!string.IsNullOrWhiteSpace(endpoint)}, ModelProvided={!string.IsNullOrWhiteSpace(model)}, ApiKeyProvided={!string.IsNullOrWhiteSpace(apiKey)}, CorsProvided={!string.IsNullOrWhiteSpace(ResultingKeys["FLEET_CORS_EXCEMPTION"])}");
 
         DialogResult = true;
         Close();

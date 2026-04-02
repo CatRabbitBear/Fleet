@@ -228,6 +228,7 @@ public partial class App : Application
             // user clicked OK → pull back their entries and save them
             foreach (var kv in dlg.ResultingKeys)
             {
+                StartupDiagnostics.Info($"Attempting to persist credential '{kv.Key}'. Value provided: {!string.IsNullOrWhiteSpace(kv.Value)}");
                 if (kv.Key == "FLEET_CORS_EXCEMPTION")
                 {
                     if (string.IsNullOrWhiteSpace(kv.Value))
@@ -240,6 +241,7 @@ public partial class App : Application
                         }
 
                         keys[kv.Key] = null;
+                        StartupDiagnostics.Info($"Credential '{kv.Key}' removed because no value was provided.");
                         continue;
                     }
                 }
@@ -256,6 +258,7 @@ public partial class App : Application
                         secret: kv.Value!,
                         useLocalMachine: true);
                     keys[kv.Key] = kv.Value;
+                    StartupDiagnostics.Info($"Credential '{kv.Key}' saved successfully.");
                 }
                 catch (Exception ex)
                 {
