@@ -17,6 +17,24 @@ It also reflects the intended architecture direction:
 
 ## Phase 1 scope (priority order)
 
+## Phase 1 delivery split (April 5, 2026 update)
+
+Because full Phase 1 is broader than a single implementation slice, it is split into two execution tasks:
+
+- **Phase 1A (implemented in this change set):**
+  - request identity + correlation middleware for privileged API paths,
+  - policy gate with default-deny for unknown callers,
+  - interactive consent integration (timeout defaults to deny),
+  - authenticated local session token check for credential endpoints,
+  - privileged credential command endpoints (set/delete/metadata) that never return secret values,
+  - SQLite-backed audit repository and baseline audit schema,
+  - host-only credential authority through Tray service implementation.
+- **Phase 1B (remaining):**
+  - expand policy gate coverage into runtime/tool execution paths,
+  - complete UX diagnostics page/query path for audit records,
+  - finish broader architecture extraction (`Fleet.Runtime`) and remaining acceptance coverage.
+
+
 ### Priority 1 — Trust boundary hardening for privileged operations
 
 Goal: no privileged action executes without explicit policy evaluation and audit.
@@ -244,33 +262,33 @@ Phase 1 is complete only when **all** criteria below are met.
 
 ## Security and policy DoD
 
-- [ ] Every privileged action flows through a unified policy gate.
-- [ ] Source identity is attached to every privileged request.
-- [ ] Default behavior for unknown/ambiguous source is deny.
-- [ ] Interactive consent path enforces timeout + default deny.
+- [~] Every privileged action flows through a unified policy gate. (Implemented for credential command path in Phase 1A; runtime/tool expansion remains for Phase 1B.)
+- [x] Source identity is attached to every privileged request (for credential API and auditable privileged endpoints introduced in Phase 1A).
+- [x] Default behavior for unknown/ambiguous source is deny.
+- [x] Interactive consent path enforces timeout + default deny.
 
 ## Credential DoD
 
-- [ ] Users can create/update/delete allowed credentials from Blazor UX.
-- [ ] Tray/host remains sole writer to Windows Credential Manager.
-- [ ] No endpoint returns plain credential secret values.
-- [ ] Credential operations are audited with correlation IDs.
+- [~] Users can create/update/delete allowed credentials from Blazor via authenticated credential API endpoints in Phase 1A; full dedicated UX surface finalization remains in Phase 1B.
+- [x] Tray/host remains sole writer to Windows Credential Manager.
+- [x] No endpoint returns plain credential secret values.
+- [x] Credential operations are audited with correlation IDs.
 
 ## API hardening DoD
 
-- [ ] Sensitive endpoints require authenticated local context.
-- [ ] Endpoint authorization policies are implemented and tested.
-- [ ] Input validation and error contracts are consistent.
+- [x] Sensitive endpoints require authenticated local context.
+- [x] Endpoint authorization policies are implemented and tested (Phase 1A baseline tests).
+- [x] Input validation and error contracts are consistent for credential endpoints.
 
 ## Data/persistence DoD
 
-- [ ] SQLite access moved to shared data project (or equivalent shared abstraction).
-- [ ] Audit schema and migration strategy are in place.
-- [ ] Both Tray and Blazor can consume data layer cleanly.
+- [x] SQLite access for audit persistence moved to shared data project (`Fleet.Data`) in Phase 1A.
+- [x] Audit schema baseline is in place (initial table/index creation in `Fleet.Data`).
+- [x] Both Tray and Blazor consume shared data abstractions for audit/metadata operations.
 
 ## Architecture DoD
 
-- [ ] Runtime orchestration logic extracted from Blazor into reusable runtime project.
+- [ ] Runtime orchestration logic extracted from Blazor into reusable runtime project. (Planned for Phase 1B.)
 - [ ] Blazor remains primarily UX/API composition layer.
 - [ ] Shared contracts remain provider-agnostic (no direct Azure/OpenAI SDK coupling in shared contracts project).
 

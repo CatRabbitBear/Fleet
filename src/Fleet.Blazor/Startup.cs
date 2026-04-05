@@ -1,21 +1,22 @@
-﻿using DotNetEnv;
-using Fleet.Blazor.Agents;
+﻿using Fleet.Blazor.Agents;
 using Fleet.Blazor.Components;
 using Fleet.Blazor.Pipeline;
 using Fleet.Blazor.Pipeline.Interfaces;
 using Fleet.Blazor.PluginSystem;
 using Fleet.Blazor.PluginSystem.Interfaces;
+using Fleet.Blazor.Security;
+using Fleet.Blazor.Services;
 using Fleet.Blazor.SQLite;
+using Fleet.Data;
+using Fleet.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using YamlDotNet.Core.Tokens;
 
 namespace Fleet.Blazor;
 
@@ -30,8 +31,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // migrate all your builder.Services.AddXyz(...) calls here
-        //services.AddSerilog();
         Console.WriteLine($"Configuring services in Startup.cs {_configuration}");
         var corsExemption = _configuration["FLEET_CORS_EXCEMPTION"];
         var corsOrigins = (corsExemption ?? string.Empty)
@@ -45,48 +44,29 @@ public class Startup
             {
                 if (corsOrigins.Length > 0)
                 {
-                    policy
-                        // *exactly* your extension origin(s), no "@temporary-addon"
-                        .WithOrigins(corsOrigins)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
+                    policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod();
                     return;
                 }
 
-                // No explicit CORS origin configured. Same-origin requests continue to work,
-                // and cross-origin requests are denied by default.
-                policy
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
+                policy.AllowAnyHeader().AllowAnyMethod();
             });
         });
 
-        // DB
-        // Make sure %LocalAppData%/Sleepr exists
-        // This is where the SQLite database will be stored
-        var appDataPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Fleet");
+        var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Fleet");
         Directory.CreateDirectory(appDataPath);
 
-        // Configure SQLite handlers
-        services.AddScoped<SqliteMcpHandler>((sp) =>
+        services.AddScoped<SqliteMcpHandler>(_ =>
         {
-            var dbFilePath = Path.Combine(appDataPath,
-                _configuration["PluginsDb:Path"] ?? "plugins.db");
-            var connectionString = $"Data Source={dbFilePath}";
-            return new SqliteMcpHandler(connectionString);
+            var dbFilePath = Path.Combine(appDataPath, _configuration["PluginsDb:Path"] ?? "plugins.db");
+            return new SqliteMcpHandler($"Data Source={dbFilePath}");
         });
 
-        services.AddScoped<SqliteAgentOutputHandler>((sp) =>
+        services.AddScoped<SqliteAgentOutputHandler>(_ =>
         {
-            var dbFilePath = Path.Combine(appDataPath,
-                _configuration["OutputDb:Path"] ?? "agents-output.db");
-            var connectionString = $"Data Source={dbFilePath}";
-            return new SqliteAgentOutputHandler(connectionString);
+            var dbFilePath = Path.Combine(appDataPath, _configuration["OutputDb:Path"] ?? "agents-output.db");
+            return new SqliteAgentOutputHandler($"Data Source={dbFilePath}");
         });
 
-        // DB + MCP
         services.AddScoped<IMcpRepoManager, McpJsonRepoManager>();
         services.AddScoped<McpPluginManager>(sp =>
         {
@@ -95,64 +75,59 @@ public class Startup
             return new McpPluginManager(repo, logger);
         });
 
-
-        // services.AddControllers();
-        // Add services to the container.
         var endpoint = ResolveRequiredSetting("FLEET_AZURE_OPENAI_ENDPOINT", "FLEET_AZURE_ENDPOINT");
         var deployment = ResolveRequiredSetting("FLEET_AZURE_OPENAI_DEPLOYMENT", "FLEET_AZURE_MODEL_ID");
         var apiKey = ResolveRequiredSetting("FLEET_AZURE_OPENAI_API_KEY", "FLEET_AZURE_MODEL_KEY");
 
-        services.AddAzureOpenAIChatCompletion(
-            deploymentName: deployment,
-            endpoint: endpoint,
-            apiKey: apiKey
-        );
+        services.AddAzureOpenAIChatCompletion(deploymentName: deployment, endpoint: endpoint, apiKey: apiKey);
 
-        services.AddTransient((serviceProvider) =>
-        {
-            return new Kernel(serviceProvider);
-        });
+        services.AddTransient(serviceProvider => new Kernel(serviceProvider));
         services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
         services.AddScoped<ChatCompletionsRunner>();
-
         services.AddHttpClient();
 
-        services.AddRazorComponents()
-            .AddInteractiveServerComponents();
-        services.AddControllers()
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-            });
+        services.AddScoped<RequestIdentityContext>();
+        services.AddSingleton(new LocalSessionOptions
+        {
+            SessionToken = _configuration["FLEET_LOCAL_SESSION_TOKEN"] ?? string.Empty
+        });
+        services.AddScoped<ILocalSessionValidator, LocalSessionValidator>();
+        services.AddScoped<IPermissionPolicyService, PermissionPolicyService>();
+        services.AddScoped<IConsentService, ConsentService>();
+        services.AddScoped<IPrivilegedActionExecutor, PrivilegedActionExecutor>();
 
-        // ... razor pages, DI registrations, etc.
+        services.AddSingleton<IAuditRepository>(_ =>
+        {
+            var dbFilePath = Path.Combine(appDataPath, _configuration["SecurityDb:Path"] ?? "security-audit.db");
+            return new SqliteAuditRepository($"Data Source={dbFilePath}");
+        });
+
+        services.AddRazorComponents().AddInteractiveServerComponents();
+        services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         Console.WriteLine($"Environment: {env.EnvironmentName}");
         StaticWebAssetsLoader.UseStaticWebAssets(env, app.ApplicationServices.GetRequiredService<IConfiguration>());
-        //Console.WriteLine($"WebRootPath: {env.WebRootPath}");
-        //foreach (var file in Directory.GetFiles(env.WebRootPath))
-        //{
-        //    Console.WriteLine($"Found file: {Path.GetFileName(file)}");
-        //}
-        app.UseSerilogRequestLogging(); // Add Serilog request logging
+        app.UseSerilogRequestLogging();
+
         if (!env.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
-        // app.UseStaticFiles();
-        //app.UseStaticFiles(new StaticFileOptions
-        //{
-        //    FileProvider = new PhysicalFileProvider(env.WebRootPath)
-        //});
-        //app.UseStaticFiles("/wwwroot"); // Use default static file serving
+
+        var auditRepository = app.ApplicationServices.GetRequiredService<IAuditRepository>();
+        auditRepository.EnsureInitializedAsync(CancellationToken.None).GetAwaiter().GetResult();
 
         app.UseHttpsRedirection();
         app.UseRouting();
+        app.UseMiddleware<RequestIdentityMiddleware>();
 
         app.UseCors();
         app.UseAuthorization();
@@ -162,9 +137,7 @@ public class Startup
         {
             endpoints.MapStaticAssets();
             endpoints.MapControllers();
-            //endpoints.MapGet("/api/status", () => "Fleet Web Server Running!");
-            endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode(); // Moved to endpoints
-            //endpoints.MapBlazorHub();
+            endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode();
         });
     }
 
@@ -179,7 +152,6 @@ public class Startup
             }
         }
 
-        throw new InvalidOperationException(
-            $"Missing required setting. Provide one of: {string.Join(", ", keys)}");
+        throw new InvalidOperationException($"Missing required setting. Provide one of: {string.Join(", ", keys)}");
     }
 }
