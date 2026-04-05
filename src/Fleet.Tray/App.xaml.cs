@@ -65,6 +65,9 @@ public partial class App : Application
             _notificationService = new NotificationService();
             StartupDiagnostics.Info("Building Fleet.Blazor host.");
 
+            var localSessionToken = Guid.NewGuid().ToString("N");
+            managedKeys["FLEET_LOCAL_SESSION_TOKEN"] = localSessionToken;
+
             _webHost = BlazorHostBuilder
                             .CreateHostBuilder(e.Args)
                             .ConfigureAppConfiguration((ctx, cfg) =>
@@ -76,12 +79,15 @@ public partial class App : Application
                             {
                                 // notification service, etc.
                                 services.AddSingleton<INotificationService>(_notificationService);
+                                services.AddScoped<ICredentialHostService, TrayCredentialHostService>();
 
                                 // register a named HttpClient pre-configured for your own server
                                 services.AddHttpClient("FleetApi", client =>
                                 {
                                     client.BaseAddress = new Uri("https://localhost:5001/");
                                     client.DefaultRequestVersion = new Version(2, 0); // optional
+                                    client.DefaultRequestHeaders.Add("X-Fleet-Session-Token", localSessionToken);
+                                    client.DefaultRequestHeaders.Add("X-Fleet-Caller", "blazor-ui");
                                 });
                             })
                             .Build();
