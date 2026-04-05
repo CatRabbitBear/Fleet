@@ -39,4 +39,26 @@ public class PermissionPolicyServiceTests
 
         Assert.Equal(PolicyDecision.Allow, result.Decision);
     }
+
+    [Fact]
+    public void Evaluate_RequiresConsent_ForBrowserExtensionRuntimeExecution()
+    {
+        var identity = new RequestIdentity(RequestSourceType.BrowserExtension, "browser-extension", "corr-2");
+        var action = new ActionDescriptor(ActionType.NetworkEgress, "chat-completions:run-task", RiskLevel.High, identity.RequestedBy);
+
+        var result = _sut.Evaluate(action, identity);
+
+        Assert.Equal(PolicyDecision.RequireInteractiveConsent, result.Decision);
+    }
+
+    [Fact]
+    public void Evaluate_AllowsRuntimeExecution_ForTrustedBlazorCaller()
+    {
+        var identity = new RequestIdentity(RequestSourceType.BlazorUiInteractive, "blazor-ui", "corr-3");
+        var action = new ActionDescriptor(ActionType.NetworkEgress, "chat-completions:run-task", RiskLevel.High, identity.RequestedBy);
+
+        var result = _sut.Evaluate(action, identity);
+
+        Assert.Equal(PolicyDecision.Allow, result.Decision);
+    }
 }

@@ -26,6 +26,16 @@ public sealed class PermissionPolicyService : IPermissionPolicyService
             return new PolicyEvaluationResult(PolicyDecision.Allow, "Credential mutation allowed for trusted source.");
         }
 
+        if (action.ActionType is ActionType.ProcessSpawn or ActionType.FileWrite or ActionType.NetworkEgress)
+        {
+            if (identity.Source == RequestSourceType.BrowserExtension)
+            {
+                return new PolicyEvaluationResult(PolicyDecision.RequireInteractiveConsent, "Browser extension runtime actions require interactive approval.");
+            }
+
+            return new PolicyEvaluationResult(PolicyDecision.Allow, "Runtime action permitted for trusted local session.");
+        }
+
         return new PolicyEvaluationResult(PolicyDecision.Allow, "Action permitted by baseline policy.");
     }
 }

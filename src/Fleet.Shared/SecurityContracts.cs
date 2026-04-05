@@ -15,7 +15,8 @@ public enum ActionType
     CredentialReadMetadata,
     ProcessSpawn,
     FileWrite,
-    NetworkEgress
+    NetworkEgress,
+    AuditRead
 }
 
 public enum RiskLevel
@@ -59,6 +60,18 @@ public sealed record AuditRecord(
     string FinalOutcome,
     string Rationale);
 
+public sealed record AuditRecordQueryResult(
+    DateTimeOffset TimestampUtc,
+    string CorrelationId,
+    string Source,
+    string RequestedBy,
+    string ActionType,
+    string Resource,
+    string RiskLevel,
+    string PolicyDecision,
+    string FinalOutcome,
+    string Rationale);
+
 public sealed record CredentialMetadata(
     string Target,
     bool Exists,
@@ -83,4 +96,5 @@ public interface IAuditRepository
     Task EnsureInitializedAsync(CancellationToken cancellationToken);
     Task WriteAsync(AuditRecord record, CancellationToken cancellationToken);
     Task<DateTimeOffset?> GetLatestCredentialUpdateAsync(string target, CancellationToken cancellationToken);
+    Task<IReadOnlyList<AuditRecordQueryResult>> GetRecentAsync(int limit, CancellationToken cancellationToken);
 }

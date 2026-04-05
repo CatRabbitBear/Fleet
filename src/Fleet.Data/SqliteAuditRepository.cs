@@ -85,4 +85,32 @@ public sealed class SqliteAuditRepository : IAuditRepository
         var value = await conn.QueryFirstOrDefaultAsync<DateTime?>(new CommandDefinition(sql, new { target }, cancellationToken: cancellationToken));
         return value is null ? null : new DateTimeOffset(DateTime.SpecifyKind(value.Value, DateTimeKind.Utc));
     }
+
+    public async Task<IReadOnlyList<AuditRecordQueryResult>> GetRecentAsync(int limit, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                timestamp_utc AS TimestampUtc,
+                correlation_id AS CorrelationId,
+                source AS Source,
+                requested_by AS RequestedBy,
+                action_type AS ActionType,
+                resource AS Resource,
+                risk_level AS RiskLevel,
+                policy_decision AS PolicyDecision,
+                final_outcome AS FinalOutcome,
+                rationale AS Rationale
+            FROM permission_audit
+            ORDER BY timestamp_utc DESC
+            LIMIT @limit;
+            """;
+
+        await using var conn = new SqliteConnection(_connectionString);
+        await conn.OpenAsync(cancellationToken);
+
+        var results = await conn.QueryAsync<AuditRecordQueryResult>(
+            new CommandDefinition(sql, new { limit }, cancellationToken: cancellationToken));
+
+        return results.ToList();
+    }
 }

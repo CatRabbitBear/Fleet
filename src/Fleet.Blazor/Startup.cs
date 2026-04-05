@@ -83,7 +83,7 @@ public class Startup
 
         services.AddTransient(serviceProvider => new Kernel(serviceProvider));
         services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
-        services.AddScoped<ChatCompletionsRunner>();
+        services.AddScoped<IChatCompletionsRunner, ChatCompletionsRunner>();
         services.AddHttpClient();
 
         services.AddScoped<RequestIdentityContext>();

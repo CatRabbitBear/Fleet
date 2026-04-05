@@ -7,7 +7,12 @@ using Microsoft.SemanticKernel.Agents;
 
 namespace Fleet.Blazor.Agents;
 
-public class ChatCompletionsRunner
+public interface IChatCompletionsRunner
+{
+    Task<AgentResponse> RunTaskAsync(List<AgentRequestItem> history);
+}
+
+public class ChatCompletionsRunner : IChatCompletionsRunner
 {
     private readonly ILogger<ChatCompletionsRunner> _logger;
     private readonly IPipelineContextFactory _contextFactory;
@@ -31,6 +36,7 @@ public class ChatCompletionsRunner
             .Use(new SaveOutputStep(_outputManager))
             .Build();
 
+        _logger.LogDebug("Starting chat completions pipeline with {HistoryCount} history items", history.Count);
         var context = _contextFactory.Create(history);
         await pipeline.RunAsync(context);
 

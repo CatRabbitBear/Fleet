@@ -1,0 +1,67 @@
+@page "/security-diagnostics"
+@inject Fleet.Shared.IAuditRepository AuditRepository
+
+<PageTitle>Security Diagnostics</PageTitle>
+
+<h3>Security Diagnostics</h3>
+<p>Recent policy/audit records (latest 50).</p>
+
+@if (_error is not null)
+{
+    <p class="text-danger">@_error</p>
+}
+else if (_records is null)
+{
+    <p>Loading…</p>
+}
+else if (_records.Count == 0)
+{
+    <p>No audit records found.</p>
+}
+else
+{
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Timestamp (UTC)</th>
+                <th>Caller</th>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>Decision</th>
+                <th>Outcome</th>
+                <th>Correlation</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in _records)
+            {
+                <tr>
+                    <td>@record.TimestampUtc.ToString("u")</td>
+                    <td>@record.Source / @record.RequestedBy</td>
+                    <td>@record.ActionType (@record.RiskLevel)</td>
+                    <td>@record.Resource</td>
+                    <td>@record.PolicyDecision</td>
+                    <td>@record.FinalOutcome</td>
+                    <td><code>@record.CorrelationId</code></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<Fleet.Shared.AuditRecordQueryResult>? _records;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _records = await AuditRepository.GetRecentAsync(50, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load audit records: {ex.Message}";
+        }
+    }
+}
