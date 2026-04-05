@@ -332,3 +332,16 @@ Phase 1 is complete only when **all** criteria below are met.
 - deep policy UI/editor for non-technical users
 
 These can follow once Phase 1 hardening baseline is complete.
+
+
+## Phase 1 progress update (April 5, 2026)
+
+Implemented in this slice:
+- Runtime endpoint hardening for `POST /api/chat-completions/run-task` with local-session validation, policy evaluation, and audit outcomes.
+- Runtime policy expansion for high-risk actions (`NetworkEgress`, `ProcessSpawn`, `FileWrite`) so browser-extension initiated actions require interactive consent.
+- Audit diagnostics query support via `GET /api/security/audit/recent?limit=...` and a Blazor diagnostics page (`/security-diagnostics`) for operational traceability.
+
+Still open for follow-up evaluation:
+- Deeper runtime extraction into a dedicated `Fleet.Runtime` project.
+- End-to-end acceptance coverage across extension-origin requests and consent prompt flow.
+
