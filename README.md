@@ -57,6 +57,44 @@ This app expects an **Azure OpenAI endpoint + deployment name + key** using the 
    - Optional CORS exemption
 3. Click **OK**. Credentials are persisted in Windows Credential Manager.
 
+## Authentication + authorization setup (for end-to-end `/agents` testing)
+
+Fleet now enforces a local auth/authz boundary for privileged APIs (including `POST /api/chat-completions/run-task`).
+
+### What must be present
+
+- A local session token in config: `FLEET_LOCAL_SESSION_TOKEN`.
+- Request header `X-Fleet-Session-Token` matching that token.
+- Request header `X-Fleet-Caller` to identify source (`blazor-ui`, `browser-extension`, etc.).
+
+When launching through `Fleet.Tray`, these are wired automatically:
+
+- Tray generates a per-run session token and injects it into Blazor configuration.
+- Tray configures a local API client with both required headers.
+
+### End-to-end test flow (simple LLM call from test page)
+
+1. Start `Fleet.Tray` and wait for the local host to start (`https://localhost:5001`).
+2. Open `https://localhost:5001/agents`.
+3. Enter a prompt (for example: `Say hello from Fleet`).
+4. Click **Run Task**.
+5. Expected result:
+   - successful response text is rendered in the page,
+   - and output may include a saved file path.
+
+### If you get `401 Unauthorized`
+
+- Confirm you started via `Fleet.Tray` (not `Fleet.Blazor` directly).
+- Restart Fleet to regenerate/rebind the local session token and headers.
+- Verify your local request path is still same-origin `https://localhost:5001`.
+
+### If you get `403 Forbidden`
+
+- Policy may have denied the action based on caller classification.
+- For extension-origin requests, interactive consent may be required/timeout-denied.
+
+For phase planning and architecture notes, see docs under `src/docs/`.
+
 ## Notes on credential handling
 
 Current behavior is acceptable for a prototype, but for production hardening you should consider:

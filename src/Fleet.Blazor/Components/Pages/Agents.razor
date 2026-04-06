@@ -1,6 +1,7 @@
 ﻿@page "/agents"
 @rendermode InteractiveServer
 @inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
 @inject Microsoft.Extensions.Logging.ILogger<Agents> Logger
 
 <h1>Agent Debug</h1>
@@ -47,7 +48,18 @@
             Logger.LogInformation("Posting chat request to {Route}", route);
             Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Posting request to {route}");
 
-            var response = await Http.PostAsJsonAsync(route, payload);
+            HttpClient apiClient;
+            try
+            {
+                apiClient = HttpClientFactory.CreateClient("FleetApi");
+            }
+            catch (InvalidOperationException)
+            {
+                apiClient = Http;
+                Logger.LogWarning("Named client 'FleetApi' not found. Falling back to default HttpClient.");
+            }
+
+            var response = await apiClient.PostAsJsonAsync(route, payload);
             var rawBody = await response.Content.ReadAsStringAsync();
             Logger.LogInformation("Chat request completed with status {StatusCode}. Body length: {BodyLength}", (int)response.StatusCode, rawBody.Length);
             Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Response status={(int)response.StatusCode}, reason={response.ReasonPhrase}, bodyLength={rawBody.Length}");
