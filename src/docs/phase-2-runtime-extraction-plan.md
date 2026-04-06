@@ -1,0 +1,56 @@
+# Fleet Phase 2 Plan: Runtime Extraction and Agent Host Alignment
+
+_Last updated: April 6, 2026._
+
+## Goal
+
+Phase 2 starts the runtime extraction promised in Phase 1 by moving agent-oriented contracts out of `Fleet.Blazor` and into a dedicated runtime project so privileged host workflows can evolve without UI coupling.
+
+## Definition of done for Step 1
+
+Step 1 is complete when:
+
+1. A new `src/Fleet.Runtime` project exists and is part of the solution.
+2. Agent request/response contracts used by `/api/chat-completions/run-task` are sourced from `Fleet.Runtime`.
+3. The chat completions runner contract is sourced from `Fleet.Runtime`, while Blazor remains the API/UI orchestration boundary.
+4. Existing Phase 1 security flow is preserved for `run-task`:
+   - local session token validation,
+   - policy evaluation,
+   - audit on deny/success/failure.
+5. Integration behavior remains unchanged: start `Fleet.Tray`, load `Fleet.Blazor`, then send and receive a message on the **Agents** tab using the configured model.
+
+## Phase 2 delivery steps
+
+## Step 1 — Runtime project bootstrap (implemented)
+
+- Add `Fleet.Runtime` as a new sibling project under `src/`.
+- Move foundational runtime-facing contracts into `Fleet.Runtime`:
+  - `AgentRequest`, `AgentRequestItem`, `AgentResponse`, `MessageType`
+  - `IChatCompletionsRunner`
+- Update `Fleet.Blazor` and tests to consume runtime contracts.
+
+## Step 2 — Pipeline abstractions extraction
+
+- Move pipeline interfaces and context abstractions into `Fleet.Runtime` behind host-agnostic contracts.
+- Introduce adapter interfaces for plugin acquisition/release and output persistence to remove direct Blazor infrastructure dependency from runtime code.
+
+## Step 3 — Host adapters and policy hooks
+
+- Keep filesystem/process execution in host-owned adapters (Tray) and provide runtime integration through explicit interfaces.
+- Ensure policy gate hooks are available at runtime tool/action boundaries (pre-execution and audit context propagation).
+
+## Step 4 — Integration and acceptance hardening
+
+- Add end-to-end coverage for:
+  - `/agents` message send/receive path through Tray-hosted Blazor.
+  - session token enforcement and policy outcomes.
+- Capture traceability assertions (correlation ID + action outcomes) in persisted audit records.
+
+## Notes on auth/authz continuity from Phase 1
+
+Phase 2 refactors should preserve these non-negotiables:
+
+- Privileged routes remain guarded by local session validation.
+- Request identity continues to flow into policy evaluation.
+- Unknown/untrusted requesters remain deny-by-default.
+- Audit trails remain durable and complete for privileged actions.

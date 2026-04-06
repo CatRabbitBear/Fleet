@@ -1,4 +1,4 @@
-﻿using Fleet.Blazor.Pipeline.Dtos;
+﻿using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel.Agents;
 using Microsoft.SemanticKernel.ChatCompletion;
 

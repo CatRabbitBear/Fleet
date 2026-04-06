@@ -1,6 +1,6 @@
-﻿using Fleet.Blazor.Pipeline.Dtos;
 using Fleet.Blazor.Pipeline.Interfaces;
 using Fleet.Blazor.PluginSystem;
+using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel;
 
 namespace Fleet.Blazor.Pipeline;

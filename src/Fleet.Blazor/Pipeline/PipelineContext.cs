@@ -1,5 +1,5 @@
-﻿using Fleet.Blazor.Pipeline.Dtos;
-using Fleet.Blazor.PluginSystem;
+﻿using Fleet.Blazor.PluginSystem;
+using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 

@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fleet.Data\Fleet.Data.csproj" />
+    <ProjectReference Include="..\Fleet.Runtime\Fleet.Runtime.csproj" />
     <ProjectReference Include="..\Fleet.Shared\Fleet.Shared.csproj" />
   </ItemGroup>
 

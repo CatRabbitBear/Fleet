@@ -1,4 +1,4 @@
-﻿using Fleet.Blazor.Pipeline.Dtos;
+﻿using Fleet.Runtime.Contracts;
 
 namespace Fleet.Blazor.Pipeline.Interfaces;
 
