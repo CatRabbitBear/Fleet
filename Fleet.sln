@@ -14,6 +14,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fleet.Data", "src\Fleet.Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fleet.Blazor.Tests", "tests\Fleet.Blazor.Tests\Fleet.Blazor.Tests.csproj", "{26679C37-37D5-4C27-AAD4-785F931DE060}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		docs\architecture-readiness-assessment.md = docs\architecture-readiness-assessment.md
+		docs\phase-1-hardening-and-credential-plan.md = docs\phase-1-hardening-and-credential-plan.md
+		src\Fleet.Tray\docs\usecases.md = src\Fleet.Tray\docs\usecases.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +100,7 @@ Global
 		{2A48580D-4C0D-4A2D-9C14-7ED7ADCE21A7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B73514AF-6CED-42B5-B08D-AEAB621757F5} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A3E1F5EF-8393-4BC8-ACFF-B4F61B4C6159} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {68C02555-5C40-4BCF-A557-E07B94644C45}

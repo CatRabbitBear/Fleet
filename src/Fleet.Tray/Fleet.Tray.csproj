@@ -21,5 +21,6 @@
 		<ProjectReference Include="..\Fleet.Blazor\Fleet.Blazor.csproj" />
 		<ProjectReference Include="..\Fleet.Shared\Fleet.Shared.csproj" />
 	</ItemGroup>
+	
 
 </Project>
