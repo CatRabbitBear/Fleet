@@ -1,16 +1,12 @@
 ﻿using Fleet.Blazor.Agents.PipelineSteps;
 using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Dtos;
 using Fleet.Blazor.Pipeline.Interfaces;
 using Fleet.Blazor.SQLite;
+using Fleet.Runtime.Agents;
+using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel.Agents;
 
 namespace Fleet.Blazor.Agents;
-
-public interface IChatCompletionsRunner
-{
-    Task<AgentResponse> RunTaskAsync(List<AgentRequestItem> history);
-}
 
 public class ChatCompletionsRunner : IChatCompletionsRunner
 {

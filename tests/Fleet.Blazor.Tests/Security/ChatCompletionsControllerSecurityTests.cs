@@ -1,8 +1,8 @@
-using Fleet.Blazor.Agents;
 using Fleet.Blazor.Controllers;
-using Fleet.Blazor.Pipeline.Dtos;
 using Fleet.Blazor.Security;
 using Fleet.Blazor.Services;
+using Fleet.Runtime.Agents;
+using Fleet.Runtime.Contracts;
 using Fleet.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

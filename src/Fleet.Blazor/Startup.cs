@@ -8,6 +8,7 @@ using Fleet.Blazor.Security;
 using Fleet.Blazor.Services;
 using Fleet.Blazor.SQLite;
 using Fleet.Data;
+using Fleet.Runtime.Agents;
 using Fleet.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;

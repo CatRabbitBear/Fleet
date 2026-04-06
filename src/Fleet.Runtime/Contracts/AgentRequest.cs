@@ -1,4 +1,4 @@
-﻿namespace Fleet.Blazor.Pipeline.Dtos;
+namespace Fleet.Runtime.Contracts;
 
 public enum MessageType
 {
@@ -9,8 +9,7 @@ public enum MessageType
 
 public class AgentRequest
 {
-    public List<AgentRequestItem> History { get; set; } = new List<AgentRequestItem>();
-    // you can add more fields as needed
+    public List<AgentRequestItem> History { get; set; } = [];
 }
 
 public class AgentRequestItem
