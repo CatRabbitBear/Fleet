@@ -1,7 +1,7 @@
-using Fleet.Blazor.Pipeline.Interfaces;
-using Fleet.Blazor.PluginSystem;
+using Fleet.Runtime.Pipeline;
 using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel;
+using Fleet.Runtime.Adapters;
 
 namespace Fleet.Blazor.Pipeline;
 
@@ -11,12 +11,12 @@ namespace Fleet.Blazor.Pipeline;
 public class PipelineContextFactory : IPipelineContextFactory
 {
     private readonly Kernel _kernel;
-    private readonly McpPluginManager _pluginManager;
+    private readonly IPluginClientAdapter _pluginClientAdapter;
 
-    public PipelineContextFactory(Kernel kernel, McpPluginManager pluginManager)
+    public PipelineContextFactory(Kernel kernel, IPluginClientAdapter pluginClientAdapter)
     {
         _kernel = kernel;
-        _pluginManager = pluginManager;
+        _pluginClientAdapter = pluginClientAdapter;
     }
 
     /// <summary>
@@ -26,6 +26,6 @@ public class PipelineContextFactory : IPipelineContextFactory
     public PipelineContext Create(List<AgentRequestItem> history)
     {
         var clone = _kernel.Clone();
-        return new PipelineContext(history, clone, _pluginManager);
+        return new PipelineContext(history, clone, _pluginClientAdapter);
     }
 }

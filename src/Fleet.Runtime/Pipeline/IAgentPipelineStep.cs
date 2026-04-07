@@ -1,4 +1,4 @@
-﻿namespace Fleet.Blazor.Pipeline.Interfaces;
+namespace Fleet.Runtime.Pipeline;
 
 /// <summary>
 /// Represents a single unit of work in the agent pipeline.

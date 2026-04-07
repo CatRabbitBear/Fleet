@@ -1,6 +1,6 @@
-﻿using Fleet.Runtime.Contracts;
+using Fleet.Runtime.Contracts;
 
-namespace Fleet.Blazor.Pipeline.Interfaces;
+namespace Fleet.Runtime.Pipeline;
 
 /// <summary>
 /// Creates <see cref="PipelineContext"/> instances for agent pipelines.

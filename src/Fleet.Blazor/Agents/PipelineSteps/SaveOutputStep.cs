@@ -1,20 +1,18 @@
-﻿using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Interfaces;
-using Fleet.Blazor.SQLite;
-using Microsoft.SemanticKernel.Agents;
+using Fleet.Runtime.Adapters;
+using Fleet.Runtime.Pipeline;
 
 namespace Fleet.Blazor.Agents.PipelineSteps;
 
 /// <summary>
-/// Persists the final result using an IAgentOutput implementation.
+/// Persists the final result using a host-owned output store.
 /// </summary>
 public class SaveOutputStep : IAgentPipelineStep
 {
-    private readonly SqliteAgentOutputHandler _output;
+    private readonly IAgentOutputStore _outputStore;
 
-    public SaveOutputStep(SqliteAgentOutputHandler output)
+    public SaveOutputStep(IAgentOutputStore outputStore)
     {
-        _output = output;
+        _outputStore = outputStore;
     }
 
     public async Task ExecuteAsync(PipelineContext context)
@@ -26,11 +24,11 @@ public class SaveOutputStep : IAgentPipelineStep
 
         try
         {
-            await _output.SaveAgentOutputAsync(context.FinalResult);
+            await _outputStore.SaveOutputAsync(context.FinalResult);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Log
+            // intentionally swallow to avoid failing request due to storage issues
         }
     }
 }

@@ -1,6 +1,6 @@
 # Fleet Phase 2 Plan: Runtime Extraction and Agent Host Alignment
 
-_Last updated: April 6, 2026._
+_Last updated: April 7, 2026._
 
 ## Goal
 
@@ -29,10 +29,18 @@ Step 1 is complete when:
   - `IChatCompletionsRunner`
 - Update `Fleet.Blazor` and tests to consume runtime contracts.
 
-## Step 2 — Pipeline abstractions extraction
+## Step 2 — Pipeline abstractions extraction (implemented)
 
-- Move pipeline interfaces and context abstractions into `Fleet.Runtime` behind host-agnostic contracts.
-- Introduce adapter interfaces for plugin acquisition/release and output persistence to remove direct Blazor infrastructure dependency from runtime code.
+- Moved pipeline contracts and context abstractions into `Fleet.Runtime` under `Fleet.Runtime.Pipeline`:
+  - `IAgentPipeline`, `IAgentPipelineBuilder`, `IAgentPipelineStep`, `IPipelineContextFactory`
+  - `PipelineContext`, `AgentContext`
+- Introduced host-agnostic runtime adapters under `Fleet.Runtime.Adapters`:
+  - `IPluginClientAdapter` (plugin client acquisition/release)
+  - `IAgentOutputStore` (output persistence)
+- Added Blazor host adapters to preserve existing behavior while removing direct runtime dependencies on Blazor infrastructure:
+  - `McpPluginClientAdapter` wrapping `McpPluginManager`
+  - `SqliteAgentOutputStore` wrapping `SqliteAgentOutputHandler`
+- Added tests covering adapter-backed pipeline behavior and context factory runtime wiring.
 
 ## Step 3 — Host adapters and policy hooks
 

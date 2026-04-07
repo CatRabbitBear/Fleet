@@ -1,4 +1,4 @@
-﻿using Fleet.Blazor.Pipeline.Interfaces;
+using Fleet.Runtime.Pipeline;
 
 namespace Fleet.Blazor.Pipeline;
 

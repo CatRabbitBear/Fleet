@@ -1,18 +1,18 @@
-﻿using Fleet.Blazor.PluginSystem;
+using Fleet.Runtime.Adapters;
 using Fleet.Runtime.Contracts;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
-namespace Fleet.Blazor.Pipeline;
+namespace Fleet.Runtime.Pipeline;
 
 /// <summary>
-/// Carries request data and state between pipeline steps.
+/// Carries request data and runtime state between pipeline steps.
 /// </summary>
 public class PipelineContext
 {
     public List<AgentRequestItem> RequestHistory { get; }
     public Kernel Kernel { get; set; }
-    public McpPluginManager PluginManager { get; }
+    public IPluginClientAdapter PluginClientAdapter { get; }
     public IList<string> SelectedPlugins { get; set; } = new List<string>();
     public ChatHistory? ChatHistory { get; set; }
     public string? FinalResult { get; set; }
@@ -22,10 +22,10 @@ public class PipelineContext
     public PipelineContext(
         List<AgentRequestItem> history,
         Kernel kernel,
-        McpPluginManager pluginManager)
+        IPluginClientAdapter pluginClientAdapter)
     {
         RequestHistory = history;
         Kernel = kernel;
-        PluginManager = pluginManager;
+        PluginClientAdapter = pluginClientAdapter;
     }
 }
