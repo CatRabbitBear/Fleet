@@ -54,6 +54,27 @@ Step 1 is complete when:
   - session token enforcement and policy outcomes.
 - Capture traceability assertions (correlation ID + action outcomes) in persisted audit records.
 
+### Step 4 progress update (April 7, 2026)
+
+- Added controller-level security tests for `/api/chat-completions/run-task` that now cover:
+  - local session rejection (`401`) when `X-Fleet-Session-Token` validation fails,
+  - policy deny behavior (`403`) with audit invocation,
+  - successful authorized execution with `Success` audit outcome,
+  - runner exception path with `ExecutionFailure` audit outcome.
+- This verifies Phase 1 hardening continuity while keeping runtime contracts in `Fleet.Runtime` and Blazor as orchestration/API only.
+
+### Hand-off for manual Fleet.Blazor Agents tab E2E check
+
+Run this simple end-to-end validation from the Tray host:
+
+1. Start `Fleet.Tray`.
+2. Open the Fleet.Blazor **Agents** tab.
+3. Send a simple prompt (for example: `hello from phase 1 step 4`).
+4. Confirm:
+   - a normal response is returned in the chat UI,
+   - no auth/policy errors are shown for trusted interactive flow,
+   - an audit entry is written for the `chat-completions:run-task` action with a populated correlation id and final outcome.
+
 ## Notes on auth/authz continuity from Phase 1
 
 Phase 2 refactors should preserve these non-negotiables:

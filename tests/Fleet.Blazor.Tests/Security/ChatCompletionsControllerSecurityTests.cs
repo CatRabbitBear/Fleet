@@ -56,6 +56,63 @@ public class ChatCompletionsControllerSecurityTests
         Assert.True(executor.AuditCalled);
     }
 
+    [Fact]
+    public async Task RunTask_ReturnsOk_AndAuditsSuccess_WhenAuthorized()
+    {
+        var runner = new FakeRunner();
+        var executor = new FakePrivilegedExecutor();
+        var identity = new RequestIdentityContext
+        {
+            Current = new RequestIdentity(RequestSourceType.BlazorUiInteractive, "blazor-ui", "corr-success")
+        };
+
+        var controller = CreateController(
+            runner,
+            executor,
+            new AlwaysAuthorizedSessionValidator(),
+            identity);
+
+        var request = new AgentRequest
+        {
+            History =
+            [
+                new AgentRequestItem { Role = MessageType.User, Content = "hello" }
+            ]
+        };
+
+        var result = await controller.RunTask(request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.IsType<AgentResponse>(ok.Value);
+        Assert.True(runner.WasCalled);
+        Assert.True(executor.AuditCalled);
+        Assert.Equal("Success", executor.LastOutcome);
+        Assert.Equal("blazor-ui", executor.LastAction?.RequestedBy);
+    }
+
+    [Fact]
+    public async Task RunTask_ReturnsBadRequest_AndAuditsExecutionFailure_WhenRunnerThrows()
+    {
+        var runner = new FakeRunner { ThrowOnRun = true };
+        var executor = new FakePrivilegedExecutor();
+
+        var controller = CreateController(
+            runner,
+            executor,
+            new AlwaysAuthorizedSessionValidator(),
+            new RequestIdentityContext
+            {
+                Current = new RequestIdentity(RequestSourceType.BlazorUiInteractive, "blazor-ui", "corr-fail")
+            });
+
+        var result = await controller.RunTask(new AgentRequest(), CancellationToken.None);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.True(runner.WasCalled);
+        Assert.True(executor.AuditCalled);
+        Assert.Equal("ExecutionFailure", executor.LastOutcome);
+    }
+
     private static ChatCompletionsController CreateController(
         IChatCompletionsRunner runner,
         IPrivilegedActionExecutor privilegedExecutor,
@@ -81,10 +138,16 @@ public class ChatCompletionsControllerSecurityTests
     private sealed class FakeRunner : IChatCompletionsRunner
     {
         public bool WasCalled { get; private set; }
+        public bool ThrowOnRun { get; set; }
 
         public Task<AgentResponse> RunTaskAsync(List<AgentRequestItem> history)
         {
             WasCalled = true;
+            if (ThrowOnRun)
+            {
+                throw new InvalidOperationException("runner failed");
+            }
+
             return Task.FromResult(new AgentResponse { Result = "ok", FilePath = "path" });
         }
     }
@@ -95,13 +158,20 @@ public class ChatCompletionsControllerSecurityTests
             = (true, new PolicyEvaluationResult(PolicyDecision.Allow, "ok"), "Authorized");
 
         public bool AuditCalled { get; private set; }
+        public ActionDescriptor? LastAction { get; private set; }
+        public string? LastOutcome { get; private set; }
 
         public Task<(bool Allowed, PolicyEvaluationResult Policy, string Outcome)> AuthorizeAsync(ActionDescriptor action, CancellationToken cancellationToken)
-            => Task.FromResult(AuthorizeResult);
+        {
+            LastAction = action;
+            return Task.FromResult(AuthorizeResult);
+        }
 
         public Task AuditAsync(ActionDescriptor action, PolicyEvaluationResult policy, string outcome, CancellationToken cancellationToken)
         {
             AuditCalled = true;
+            LastAction = action;
+            LastOutcome = outcome;
             return Task.CompletedTask;
         }
     }
