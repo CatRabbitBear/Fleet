@@ -1,14 +1,16 @@
 ﻿using Fleet.Blazor.Agents;
 using Fleet.Blazor.Components;
 using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Interfaces;
+using Fleet.Blazor.Adapters;
 using Fleet.Blazor.PluginSystem;
 using Fleet.Blazor.PluginSystem.Interfaces;
 using Fleet.Blazor.Security;
 using Fleet.Blazor.Services;
 using Fleet.Blazor.SQLite;
 using Fleet.Data;
+using Fleet.Runtime.Adapters;
 using Fleet.Runtime.Agents;
+using Fleet.Runtime.Pipeline;
 using Fleet.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
@@ -83,6 +85,8 @@ public class Startup
         services.AddAzureOpenAIChatCompletion(deploymentName: deployment, endpoint: endpoint, apiKey: apiKey);
 
         services.AddTransient(serviceProvider => new Kernel(serviceProvider));
+        services.AddScoped<IPluginClientAdapter, McpPluginClientAdapter>();
+        services.AddScoped<IAgentOutputStore, SqliteAgentOutputStore>();
         services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
         services.AddScoped<IChatCompletionsRunner, ChatCompletionsRunner>();
         services.AddHttpClient();

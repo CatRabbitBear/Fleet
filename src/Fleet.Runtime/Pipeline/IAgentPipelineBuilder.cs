@@ -1,4 +1,4 @@
-﻿namespace Fleet.Blazor.Pipeline.Interfaces;
+namespace Fleet.Runtime.Pipeline;
 
 /// <summary>
 /// Fluent builder used to compose an agent pipeline.

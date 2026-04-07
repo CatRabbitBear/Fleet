@@ -1,10 +1,9 @@
-﻿using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Interfaces;
+﻿using Fleet.Runtime.Pipeline;
 
 namespace Fleet.Blazor.Agents.PipelineSteps;
 
 /// <summary>
-/// Disposes any agents stored in the PipelineContext and releases their plugin clients.
+/// Releases plugin clients tracked by the PipelineContext.
 /// </summary>
 public class CleanupAgentsStep : IAgentPipelineStep
 {
@@ -12,12 +11,12 @@ public class CleanupAgentsStep : IAgentPipelineStep
     {
         foreach (var kvp in context.Agents)
         {
-            // Release any plugin clients acquired for this agent
             foreach (var id in kvp.Value.PluginIds)
             {
-                await context.PluginManager.ReleaseClientAsync(id);
+                await context.PluginClientAdapter.ReleaseClientAsync(id);
             }
         }
+
         context.Agents.Clear();
     }
 }

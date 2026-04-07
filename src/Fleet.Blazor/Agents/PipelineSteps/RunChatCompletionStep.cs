@@ -1,5 +1,4 @@
-﻿using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Interfaces;
+﻿using Fleet.Runtime.Pipeline;
 using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Fleet.Blazor.Agents.PipelineSteps;

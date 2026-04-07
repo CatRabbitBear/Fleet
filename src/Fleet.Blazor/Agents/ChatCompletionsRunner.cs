@@ -1,10 +1,9 @@
 ﻿using Fleet.Blazor.Agents.PipelineSteps;
 using Fleet.Blazor.Pipeline;
-using Fleet.Blazor.Pipeline.Interfaces;
-using Fleet.Blazor.SQLite;
+using Fleet.Runtime.Adapters;
 using Fleet.Runtime.Agents;
 using Fleet.Runtime.Contracts;
-using Microsoft.SemanticKernel.Agents;
+using Fleet.Runtime.Pipeline;
 
 namespace Fleet.Blazor.Agents;
 
@@ -12,16 +11,16 @@ public class ChatCompletionsRunner : IChatCompletionsRunner
 {
     private readonly ILogger<ChatCompletionsRunner> _logger;
     private readonly IPipelineContextFactory _contextFactory;
-    private readonly SqliteAgentOutputHandler _outputManager;
+    private readonly IAgentOutputStore _outputStore;
 
     public ChatCompletionsRunner(
         ILogger<ChatCompletionsRunner> logger,
         IPipelineContextFactory contextFactory,
-        SqliteAgentOutputHandler outputManager)
+        IAgentOutputStore outputStore)
     {
         _logger = logger;
         _contextFactory = contextFactory;
-        _outputManager = outputManager;
+        _outputStore = outputStore;
     }
 
     public async Task<AgentResponse> RunTaskAsync(List<AgentRequestItem> history)
@@ -29,7 +28,7 @@ public class ChatCompletionsRunner : IChatCompletionsRunner
         var pipeline = new AgentPipelineBuilder()
             .Use(new LoadChatHistoryStep())
             .Use(new RunChatCompletionStep())
-            .Use(new SaveOutputStep(_outputManager))
+            .Use(new SaveOutputStep(_outputStore))
             .Build();
 
         _logger.LogDebug("Starting chat completions pipeline with {HistoryCount} history items", history.Count);

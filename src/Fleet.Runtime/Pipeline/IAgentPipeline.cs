@@ -1,4 +1,4 @@
-﻿namespace Fleet.Blazor.Pipeline.Interfaces;
+namespace Fleet.Runtime.Pipeline;
 
 /// <summary>
 /// Executes a configured sequence of pipeline steps.
