@@ -1,5 +1,6 @@
 ﻿using Fleet.Blazor;
 using Fleet.Shared;
+using Fleet.Runtime.Adapters;
 using Fleet.Shared.Interfaces;
 using Fleet.Tray.Utils;
 using Microsoft.Extensions.Configuration;
@@ -80,6 +81,9 @@ public partial class App : Application
                                 // notification service, etc.
                                 services.AddSingleton<INotificationService>(_notificationService);
                                 services.AddScoped<ICredentialHostService, TrayCredentialHostService>();
+                                services.AddScoped<TrayRuntimeHostAdapters>();
+                                services.AddScoped<IFileSystemHostAdapter>(sp => sp.GetRequiredService<TrayRuntimeHostAdapters>());
+                                services.AddScoped<IProcessHostAdapter>(sp => sp.GetRequiredService<TrayRuntimeHostAdapters>());
 
                                 // register a named HttpClient pre-configured for your own server
                                 services.AddHttpClient("FleetApi", client =>
