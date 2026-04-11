@@ -11,10 +11,12 @@ using Fleet.Data;
 using Fleet.Runtime.Adapters;
 using Fleet.Runtime.Agents;
 using Fleet.Runtime.Pipeline;
+using Fleet.Runtime.Security;
 using Fleet.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Serilog;
@@ -85,8 +87,10 @@ public class Startup
         services.AddAzureOpenAIChatCompletion(deploymentName: deployment, endpoint: endpoint, apiKey: apiKey);
 
         services.AddTransient(serviceProvider => new Kernel(serviceProvider));
-        services.AddScoped<IPluginClientAdapter, McpPluginClientAdapter>();
-        services.AddScoped<IAgentOutputStore, SqliteAgentOutputStore>();
+        services.TryAddScoped<IPluginClientAdapter, McpPluginClientAdapter>();
+        services.TryAddScoped<IAgentOutputStore, SqliteAgentOutputStore>();
+        services.TryAddScoped<IFileSystemHostAdapter, LocalFileSystemHostAdapter>();
+        services.TryAddScoped<IProcessHostAdapter, LocalProcessHostAdapter>();
         services.AddScoped<IPipelineContextFactory, PipelineContextFactory>();
         services.AddScoped<IChatCompletionsRunner, ChatCompletionsRunner>();
         services.AddHttpClient();
@@ -100,6 +104,7 @@ public class Startup
         services.AddScoped<IPermissionPolicyService, PermissionPolicyService>();
         services.AddScoped<IConsentService, ConsentService>();
         services.AddScoped<IPrivilegedActionExecutor, PrivilegedActionExecutor>();
+        services.TryAddScoped<IRuntimeExecutionGate, RuntimeExecutionGate>();
 
         services.AddSingleton<IAuditRepository>(_ =>
         {

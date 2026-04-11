@@ -1,6 +1,6 @@
 # Fleet Phase 3 Plan: Use-Case Completeness, Governance, and Operator UX
 
-_Last updated: April 10, 2026._
+_Last updated: April 11, 2026._
 
 ## Purpose
 
@@ -79,6 +79,15 @@ Deliver **use-case completeness** by implementing configurable agents/workflows,
    - Agent/workflow definitions, run lineage, and artifacts are modelled explicitly in shared data storage.
 
 ---
+
+
+## Pre-Phase 3 prerequisite artifacts (added April 11, 2026)
+
+To reduce security regressions before broadening endpoint/domain surface:
+
+- Auth/identity/policy/audit sequence is now documented in `auth-flow-and-runtime-boundary.md`.
+- Phase 2 open-item tracking is now documented in `phase-2-closeout-checklist.md`.
+- Runtime filesystem/process adapter framework hooks are in place so Tray can remain the privileged execution owner.
 
 ## Proposed Phase 3 scope
 
@@ -216,7 +225,7 @@ Phase 3 is complete when all of the following are true:
 
 ## Recommended immediate next actions (next sprint)
 
-1. Create a short Phase 2 close-out checklist document and mark each open Step 3/4 item as complete/incomplete.
+1. Maintain `phase-2-closeout-checklist.md` and attach manual evidence links for remaining unchecked items.
 2. Draft initial schema proposal for `AgentDefinition`, `WorkflowDefinition`, `Run`, `RunStep`, and `Artifact` entities.
 3. Implement a minimal vertical slice:
    - create agent,
