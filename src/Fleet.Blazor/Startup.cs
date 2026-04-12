@@ -112,6 +112,12 @@ public class Startup
             return new SqliteAuditRepository($"Data Source={dbFilePath}");
         });
 
+        services.AddSingleton<IAgentGovernanceRepository>(_ =>
+        {
+            var dbFilePath = Path.Combine(appDataPath, _configuration["AgentGovernanceDb:Path"] ?? "agents-governance.db");
+            return new SqliteAgentGovernanceRepository($"Data Source={dbFilePath}");
+        });
+
         services.AddRazorComponents().AddInteractiveServerComponents();
         services.AddControllers().AddJsonOptions(options =>
         {
@@ -134,6 +140,9 @@ public class Startup
 
         var auditRepository = app.ApplicationServices.GetRequiredService<IAuditRepository>();
         auditRepository.EnsureInitializedAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        var agentGovernanceRepository = app.ApplicationServices.GetRequiredService<IAgentGovernanceRepository>();
+        agentGovernanceRepository.EnsureInitializedAsync(CancellationToken.None).GetAwaiter().GetResult();
 
         app.UseHttpsRedirection();
         app.UseRouting();

@@ -4,100 +4,214 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject Microsoft.Extensions.Logging.ILogger<Agents> Logger
 
-<h1>Agent Debug</h1>
+<h1>Agents</h1>
 
-<p>
-    Enter your message below and click <strong>Run Task</strong>. Only a single <em>User</em> message is sent.
-</p>
+<div style="margin-bottom:1rem;border:1px solid #ccc;padding:1rem;max-width:900px;">
+    <h3>Create Agent</h3>
+    <input @bind="NewAgentName" placeholder="Agent name" style="width:220px;margin-right:.5rem;" />
+    <input @bind="NewAgentDescription" placeholder="Description" style="width:300px;margin-right:.5rem;" />
+    <select @bind="NewAgentTier" style="margin-right:.5rem;">
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+    </select>
+    <br />
+    <textarea @bind="NewAgentPrompt" rows="3" placeholder="Prompt template" style="width:100%;margin-top:.5rem;"></textarea>
+    <button @onclick="CreateAgentAsync" style="margin-top:.5rem;">Create Agent</button>
+</div>
 
-<textarea @bind="UserInput" rows="4" placeholder="Type your message here..." style="width:100%;max-width:600px;"></textarea>
+<div style="margin-bottom:1rem;">
+    <label>Agent:</label>
+    <select @bind="SelectedAgentId" style="min-width:320px;margin-left:.5rem;">
+        <option value="">-- Select an agent --</option>
+        @foreach (var agent in AgentsList)
+        {
+            <option value="@agent.AgentId">@agent.Name (@agent.ExtensionTier)</option>
+        }
+    </select>
+    <button @onclick="LoadRunsAsync" style="margin-left:.5rem;">Refresh Runs</button>
+</div>
+
+<textarea @bind="UserInput" rows="4" placeholder="Type your message here..." style="width:100%;max-width:700px;"></textarea>
 <br />
 <button @onclick="RunTaskAsync" style="margin-top:.5rem;padding:.5rem 1rem;">Run Task</button>
 
-<div id="result" style="margin-top:1rem;white-space:pre-wrap;">
-    @ResultText
-</div>
+<div id="result" style="margin-top:1rem;white-space:pre-wrap;">@ResultText</div>
+
+@if (Runs.Count > 0)
+{
+    <h3>Recent Runs</h3>
+    <ul>
+        @foreach (var run in Runs)
+        {
+            <li>@run.RunId - @run.Status - @run.StartedAtUtc.UtcDateTime.ToString("u")</li>
+        }
+    </ul>
+}
 
 @code {
     private string UserInput { get; set; } = string.Empty;
     private string ResultText { get; set; } = string.Empty;
+    private string SelectedAgentId { get; set; } = string.Empty;
+    private List<AgentViewModel> AgentsList { get; set; } = [];
+    private List<RunViewModel> Runs { get; set; } = [];
+
+    private string NewAgentName { get; set; } = string.Empty;
+    private string NewAgentDescription { get; set; } = string.Empty;
+    private string NewAgentPrompt { get; set; } = "You are a helpful assistant.";
+    private string NewAgentTier { get; set; } = "Medium";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAgentsAsync();
+    }
+
+    private async Task CreateAgentAsync()
+    {
+        try
+        {
+            var client = CreateClient();
+            var payload = new
+            {
+                name = NewAgentName,
+                description = NewAgentDescription,
+                promptTemplate = NewAgentPrompt,
+                modelPolicy = "default",
+                allowedTools = Array.Empty<string>(),
+                allowedResources = Array.Empty<string>(),
+                extensionTier = NewAgentTier
+            };
+
+            var response = await client.PostAsJsonAsync("/api/agents", payload);
+            if (!response.IsSuccessStatusCode)
+            {
+                ResultText = $"Create failed: {response.StatusCode}";
+                return;
+            }
+
+            await LoadAgentsAsync();
+            ResultText = "Agent created.";
+        }
+        catch (Exception ex)
+        {
+            ResultText = $"Create failed: {ex.Message}";
+        }
+    }
 
     private async Task RunTaskAsync()
     {
-        Logger.LogInformation("Agents chatbox submit clicked. Input length: {InputLength}", UserInput?.Length ?? 0);
-        Fleet.Blazor.Utilities.ChatDiagnostics.Info($"UI submit initiated. InputLength={UserInput?.Length ?? 0}");
+        if (string.IsNullOrWhiteSpace(SelectedAgentId))
+        {
+            ResultText = "Select an agent first.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(UserInput))
         {
             ResultText = "Please enter a message first.";
-            Fleet.Blazor.Utilities.ChatDiagnostics.Info("UI submit blocked because input is empty.");
             return;
         }
 
         ResultText = "Running...";
+
         try
         {
             var payload = new
             {
+                agentId = SelectedAgentId,
                 history = new[]
                 {
                     new { role = "User", content = UserInput }
                 }
             };
 
-            var route = "/api/chat-completions/run-task";
-            Logger.LogInformation("Posting chat request to {Route}", route);
-            Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Posting request to {route}");
-
-            HttpClient apiClient;
-            try
-            {
-                apiClient = HttpClientFactory.CreateClient("FleetApi");
-            }
-            catch (InvalidOperationException)
-            {
-                apiClient = Http;
-                Logger.LogWarning("Named client 'FleetApi' not found. Falling back to default HttpClient.");
-            }
-
-            var response = await apiClient.PostAsJsonAsync(route, payload);
+            var response = await CreateClient().PostAsJsonAsync("/api/chat-completions/run-task", payload);
             var rawBody = await response.Content.ReadAsStringAsync();
-            Logger.LogInformation("Chat request completed with status {StatusCode}. Body length: {BodyLength}", (int)response.StatusCode, rawBody.Length);
-            Fleet.Blazor.Utilities.ChatDiagnostics.Info($"Response status={(int)response.StatusCode}, reason={response.ReasonPhrase}, bodyLength={rawBody.Length}");
-
-            RunTaskResponse? data = null;
-            if (!string.IsNullOrWhiteSpace(rawBody))
-            {
-                data = System.Text.Json.JsonSerializer.Deserialize<RunTaskResponse>(rawBody, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-            }
+            var data = System.Text.Json.JsonSerializer.Deserialize<RunTaskResponse>(rawBody, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             if (response.IsSuccessStatusCode && data is not null)
             {
-                ResultText = data.Result
-                    + (string.IsNullOrEmpty(data.FilePath)
-                        ? string.Empty
-                        : $"\nFile output saved to: {data.FilePath}");
+                ResultText = $"Run: {data.RunId}\n{data.Result}";
             }
             else
             {
                 ResultText = $"Error: {data?.Error ?? response.ReasonPhrase}";
-                Fleet.Blazor.Utilities.ChatDiagnostics.Info($"UI displayed error. Status={(int)response.StatusCode}, ParsedError={data?.Error ?? "<null>"}");
             }
+
+            await LoadRunsAsync();
         }
         catch (Exception ex)
         {
             ResultText = $"Request failed: {ex.Message}";
-            Logger.LogError(ex, "Agents chatbox request failed.");
-            Fleet.Blazor.Utilities.ChatDiagnostics.Error("UI request failed.", ex);
+            Logger.LogError(ex, "Agents request failed.");
         }
     }
 
-    private class RunTaskResponse
+    private async Task LoadAgentsAsync()
+    {
+        var response = await CreateClient().GetAsync("/api/agents");
+        if (!response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var agents = await response.Content.ReadFromJsonAsync<List<AgentViewModel>>() ?? [];
+        AgentsList = agents;
+        if (string.IsNullOrWhiteSpace(SelectedAgentId) && AgentsList.Count > 0)
+        {
+            SelectedAgentId = AgentsList[0].AgentId;
+        }
+
+        await LoadRunsAsync();
+    }
+
+    private async Task LoadRunsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedAgentId))
+        {
+            Runs = [];
+            return;
+        }
+
+        var response = await CreateClient().GetAsync($"/api/agents/runs?agentId={Uri.EscapeDataString(SelectedAgentId)}&limit=10");
+        if (!response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        Runs = await response.Content.ReadFromJsonAsync<List<RunViewModel>>() ?? [];
+    }
+
+    private HttpClient CreateClient()
+    {
+        try
+        {
+            return HttpClientFactory.CreateClient("FleetApi");
+        }
+        catch
+        {
+            return Http;
+        }
+    }
+
+    private sealed class RunTaskResponse
     {
         public string Result { get; set; } = "";
-        public string? FilePath { get; set; }
+        public string? RunId { get; set; }
         public string? Error { get; set; }
+    }
+
+    private sealed class AgentViewModel
+    {
+        public string AgentId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string ExtensionTier { get; set; } = string.Empty;
+    }
+
+    private sealed class RunViewModel
+    {
+        public string RunId { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTimeOffset StartedAtUtc { get; set; }
     }
 }

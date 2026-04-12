@@ -21,7 +21,8 @@ public class ChatCompletionsControllerSecurityTests
             runner,
             executor,
             new AlwaysUnauthorizedSessionValidator(),
-            new RequestIdentityContext());
+            new RequestIdentityContext(),
+            new FakeAgentRepository());
 
         var result = await controller.RunTask(new AgentRequest(), CancellationToken.None);
 
@@ -45,9 +46,10 @@ public class ChatCompletionsControllerSecurityTests
             new RequestIdentityContext
             {
                 Current = new RequestIdentity(RequestSourceType.UnknownLocalCaller, "unknown", "corr-deny")
-            });
+            },
+            new FakeAgentRepository());
 
-        var result = await controller.RunTask(new AgentRequest(), CancellationToken.None);
+        var result = await controller.RunTask(new AgentRequest { AgentId = FakeAgentRepository.DefaultAgentId }, CancellationToken.None);
 
         Assert.IsType<ObjectResult>(result.Result);
         var objectResult = (ObjectResult)result.Result!;
@@ -70,10 +72,12 @@ public class ChatCompletionsControllerSecurityTests
             runner,
             executor,
             new AlwaysAuthorizedSessionValidator(),
-            identity);
+            identity,
+            new FakeAgentRepository());
 
         var request = new AgentRequest
         {
+            AgentId = FakeAgentRepository.DefaultAgentId,
             History =
             [
                 new AgentRequestItem { Role = MessageType.User, Content = "hello" }
@@ -83,7 +87,8 @@ public class ChatCompletionsControllerSecurityTests
         var result = await controller.RunTask(request, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.IsType<AgentResponse>(ok.Value);
+        var response = Assert.IsType<AgentResponse>(ok.Value);
+        Assert.False(string.IsNullOrWhiteSpace(response.RunId));
         Assert.True(runner.WasCalled);
         Assert.True(executor.AuditCalled);
         Assert.Equal("Success", executor.LastOutcome);
@@ -103,9 +108,10 @@ public class ChatCompletionsControllerSecurityTests
             new RequestIdentityContext
             {
                 Current = new RequestIdentity(RequestSourceType.BlazorUiInteractive, "blazor-ui", "corr-fail")
-            });
+            },
+            new FakeAgentRepository());
 
-        var result = await controller.RunTask(new AgentRequest(), CancellationToken.None);
+        var result = await controller.RunTask(new AgentRequest { AgentId = FakeAgentRepository.DefaultAgentId }, CancellationToken.None);
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.True(runner.WasCalled);
@@ -117,14 +123,16 @@ public class ChatCompletionsControllerSecurityTests
         IChatCompletionsRunner runner,
         IPrivilegedActionExecutor privilegedExecutor,
         ILocalSessionValidator sessionValidator,
-        RequestIdentityContext identityContext)
+        RequestIdentityContext identityContext,
+        IAgentGovernanceRepository agentRepository)
     {
         var controller = new ChatCompletionsController(
             NullLogger<ChatCompletionsController>.Instance,
             runner,
             privilegedExecutor,
             sessionValidator,
-            identityContext)
+            identityContext,
+            agentRepository)
         {
             ControllerContext = new ControllerContext
             {
@@ -174,6 +182,27 @@ public class ChatCompletionsControllerSecurityTests
             LastOutcome = outcome;
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeAgentRepository : IAgentGovernanceRepository
+    {
+        public const string DefaultAgentId = "agent-1";
+
+        public Task AddArtifactAsync(string runId, string type, string storagePath, string checksum, long contentSize, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task CompleteRunAsync(string runId, string status, string? error, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<AgentDefinitionRecord> CreateAgentAsync(AgentUpsertCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task EnsureInitializedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<AgentDefinitionRecord?> GetAgentAsync(string agentId, CancellationToken cancellationToken)
+            => Task.FromResult<AgentDefinitionRecord?>(
+                agentId == DefaultAgentId
+                    ? new AgentDefinitionRecord(DefaultAgentId, "Test", "Desc", true, "v1", ExtensionPermissionTier.Medium, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+                    : null);
+
+        public Task<AgentDefinitionVersionRecord?> GetActiveVersionAsync(string agentId, CancellationToken cancellationToken) => Task.FromResult<AgentDefinitionVersionRecord?>(null);
+        public Task<IReadOnlyList<AgentDefinitionRecord>> ListAgentsAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<AgentDefinitionRecord>>([]);
+        public Task<IReadOnlyList<AgentArtifactRecord>> ListArtifactsByRunAsync(string runId, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<AgentArtifactRecord>>([]);
+        public Task<IReadOnlyList<AgentRunRecord>> ListRunsAsync(string? agentId, int limit, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<AgentRunRecord>>([]);
+        public Task<string> StartRunAsync(string agentId, string correlationId, string initiatedBy, string source, string policyDecision, CancellationToken cancellationToken) => Task.FromResult(Guid.NewGuid().ToString("N"));
     }
 
     private sealed class AlwaysUnauthorizedSessionValidator : ILocalSessionValidator
