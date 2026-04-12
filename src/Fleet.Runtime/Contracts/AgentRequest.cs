@@ -9,6 +9,7 @@ public enum MessageType
 
 public class AgentRequest
 {
+    public string? AgentId { get; set; }
     public List<AgentRequestItem> History { get; set; } = [];
 }
 
@@ -22,4 +23,5 @@ public class AgentResponse
 {
     public string Result { get; set; } = default!;
     public string? FilePath { get; set; }
+    public string? RunId { get; set; }
 }
